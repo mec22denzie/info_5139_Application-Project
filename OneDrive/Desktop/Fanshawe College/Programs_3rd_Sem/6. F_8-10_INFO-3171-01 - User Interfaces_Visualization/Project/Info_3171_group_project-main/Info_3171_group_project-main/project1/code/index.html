@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+      crossorigin="anonymous"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+      rel="stylesheet"
+    />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles/color-theme.css" />
+    <link rel="stylesheet" href="./styles/typography.css" />
+    <link rel="stylesheet" href="./styles/colors.css" />
+    <link rel="stylesheet" href="./styles/elements.css" />
+    <link rel="stylesheet" href="./styles/index.css" />
+    <link rel="icon" href="./assets/CTV.png" />
+    <title>UI Pattern Library</title>
+  </head>
+  <body class="bg-background container">
+    <header class="mx-auto mt-4 d-flex align-items-center">
+      <img src="./assets/CTV.png" class="header-icon" width="100" />
+      <div>
+        <h1 class="text-primary">UI Pattern Library</h1>
+        <p>A comprehensive collection of dashboard components and patterns</p>
+      </div>
+    </header>
+
+    <nav>
+      <ul class="d-flex justify-content-start py-1 px-1 rounded-pill" id="nav">
+        <li
+          class="flex-fill text-center pointer rounded-pill navSelected"
+          data-section="dashboard"
+          id="nav-dashboard"
+        >
+          Dashboard
+        </li>
+        <li
+          class="flex-fill text-center pointer rounded-pill"
+          data-section="typography"
+          id="nav-typography"
+        >
+          Typography
+        </li>
+        <li
+          class="flex-fill text-center pointer rounded-pill"
+          data-section="colors"
+          id="nav-colors"
+        >
+          Colors
+        </li>
+        <li
+          class="flex-fill text-center pointer rounded-pill"
+          data-section="elements"
+          id="nav-elements"
+        >
+          Elements
+        </li>
+        <li
+          class="flex-fill text-center pointer rounded-pill"
+          data-section="charts"
+          id="nav-charts"
+        >
+          Charts
+        </li>
+      </ul>
+    </nav>
+
+    <main>
+      <!-- this part will be done once all the charts has been designed -->
+      <section id="dashboard" class="show">
+        <p>dashboard content... developing</p>
+      </section>
+      <!-- typography: Mary  -->
+      <section id="typography" class="hidden">
+        <div class="m_typography-title">
+          <div class="m_text-title">
+            Command TV Typography UI Pattern Library
+          </div>
+          <div class="m_sub-text-title">
+            Font Family: Logo-inspired sans-serif (Montserrat, Poppins, or
+            Nunito)
+          </div>
+        </div>
+        <h1 class="m_section-title">Logo & Branding Font</h1>
+
+        <div class="m_typography">
+          <div class="m_left">
+            <div class="m_title">Company Logo / Top-Level Headers</div>
+            <div class="m_text m_logo-branding">
+              Dashboard Header / Hero Title
+            </div>
+            <div class="m_tag-label">&lt;h1&gt;Logo / Branding&lt;/h1&gt;</div>
+          </div>
+          <div class="m_right">700 / Montserrat</div>
+        </div>
+
+        <h1 class="m_section-title">Headers & Menus</h1>
+
+        <div class="m_typography">
+          <div class="m_left">
+            <div class="m_title">H1 / Page Title</div>
+            <div class="m_text h1">Primary headers, dashboard top sections</div>
+            <div class="m_tag-label">&lt;h1&gt;Page Title&lt;/h1&gt;</div>
+          </div>
+          <div class="m_right">32px / 700 / 40px</div>
+        </div>
+
+        <div class="m_typography">
+          <div class="m_left">
+            <div class="m_title">H2 / Section Title</div>
+            <div class="m_text h2">Subsections</div>
+            <div class="m_tag-label">&lt;h2&gt;Section Title&lt;/h2&gt;</div>
+          </div>
+          <div class="m_right">24px / 600 / 32px</div>
+        </div>
+
+        <div class="m_typography">
+          <div class="m_left">
+            <div class="m_title">H3 / Subsection</div>
+            <div class="m_text h3">Minor headings, cards</div>
+            <div class="m_tag-label">&lt;h3&gt;Subsection&lt;/h3&gt;</div>
+          </div>
+          <div class="m_right">20px / 500 / 28px</div>
+        </div>
+
+        <div class="m_typography">
+          <div class="m_left">
+            <div class="m_title">Menu Item / Nav</div>
+            <div class="m_text menu-item">Navigation menus</div>
+            <div class="m_tag-label">&lt;nav&gt;Menu Item&lt;/nav&gt;</div>
+          </div>
+          <div class="m_right">16px / 500 / 24px</div>
+        </div>
+
+        <div class="m_typography">
+          <div class="m_left">
+            <div class="m_title">Active Menu</div>
+            <div class="m_text menu-active">Highlight current menu</div>
+            <div class="m_tag-label">&lt;nav&gt;Active Menu&lt;/nav&gt;</div>
+          </div>
+          <div class="m_right">16px / 700 / 24px</div>
+        </div>
+
+        <h1 class="m_section-title">Chart Data / Numbers</h1>
+
+        <div class="m_typography">
+          <div class="m_left">
+            <div class="m_title">Axis Labels</div>
+            <div class="m_text axis-label">Chart axis labels</div>
+            <div class="m_tag-label">&lt;span&gt;Axis Label&lt;/span&gt;</div>
+          </div>
+          <div class="m_right">14px / 400 / 20px</div>
+        </div>
+
+        <div class="m_typography">
+          <div class="m_left">
+            <div class="m_title">Data Points</div>
+            <div class="m_text data-point">Values on charts</div>
+            <div class="m_tag-label">&lt;span&gt;Data Point&lt;/span&gt;</div>
+          </div>
+          <div class="m_right">12px / 500 / 18px</div>
+        </div>
+
+        <div class="m_typography">
+          <div class="m_left">
+            <div class="m_title">Tooltip</div>
+            <div class="m_text tooltip">Information on hover</div>
+            <div class="m_tag-label">&lt;span&gt;Tooltip&lt;/span&gt;</div>
+          </div>
+          <div class="m_right">12px / 400 / 18px</div>
+        </div>
+
+        <h1 class="m_section-title">Body Text / UI Elements</h1>
+
+        <div class="m_typography">
+          <div class="m_left">
+            <div class="m_title">Body Text</div>
+            <div class="m_text body-text">
+              Main content text in forms, paragraphs, and UI elements.
+            </div>
+            <div class="m_tag-label">&lt;p&gt;Body Text&lt;/p&gt;</div>
+          </div>
+          <div class="m_right">16px / 400 / 24px</div>
+        </div>
+
+        <div class="m_typography">
+          <div class="m_left">
+            <div class="m_title">Subtext / Caption</div>
+            <div class="m_text subtext">
+              Helper text, captions, or secondary information.
+            </div>
+            <div class="m_tag-label">&lt;span&gt;Subtext&lt;/span&gt;</div>
+          </div>
+          <div class="m_right">14px / 400 / 20px</div>
+        </div>
+
+        <div class="m_typography">
+          <div class="m_left">
+            <div class="m_title">Buttons / Labels</div>
+            <div class="m_text button-label">
+              Primary button text or form labels.
+            </div>
+            <div class="m_tag-label">&lt;button&gt;Label&lt;/button&gt;</div>
+          </div>
+          <div class="m_right">16px / 500 / 24px</div>
+        </div>
+      </section>
+      <!-- colors: Pedro -->
+      <section id="colors" class="hidden">
+        <p>color content... developing</p>
+      </section>
+      <!-- elements: Pedro -->
+      <section id="elements" class="hidden">
+        <p>elements content... developing</p>
+      </section>
+      <!-- charts: will be added after finish design of the chart, totally 9 charts image here -->
+      <section id="charts" class="hidden">
+        <p>charts content... developing</p>
+      </section>
+    </main>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+      crossorigin="anonymous"
+    ></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="./js/index.js"></script>
+  </body>
+</html>
