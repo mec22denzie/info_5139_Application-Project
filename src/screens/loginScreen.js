@@ -14,7 +14,7 @@ export default function LoginScreen({ navigation }) {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         Alert.alert("Logged in as " + currentUser.email);
-        navigation.replace("Home");
+        navigation.replace("HomeTabs");
       }
     });
     return () => unsubscribe();
@@ -32,7 +32,7 @@ export default function LoginScreen({ navigation }) {
       setLoading(true);
       await signInWithEmailAndPassword(auth, email, password);
       Alert.alert("Login Successful!");
-      navigation.replace("Home");
+      navigation.replace("HomeTabs");
     } catch (error) {
       console.log("Login Error:", error);
       Alert.alert(error.message);
