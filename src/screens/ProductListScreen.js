@@ -14,7 +14,6 @@ export default function ProductListScreen({ navigation }) {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [seeding, setSeeding] = useState(false);
 
   //Local image mapping for product images
   const localImages = {
@@ -145,36 +144,6 @@ export default function ProductListScreen({ navigation }) {
     }
   };
 
-  const resetAndSeedProducts = async () => {
-    try {
-      setSeeding(true);
-      setLoading(true);
-      setError(null);
-
-      const productsRef = collection(firestore, "products");
-      const snapshot = await getDocs(productsRef);
-
-      if (!snapshot.empty) {
-        await Promise.all(snapshot.docs.map((docSnap) => deleteDoc(docSnap.ref)));
-      }
-
-      await addSampleProducts();
-
-      const refreshed = await getDocs(productsRef);
-      const data = refreshed.docs.map((docSnap) => ({
-        id: docSnap.id,
-        ...docSnap.data(),
-      }));
-      setProducts(data);
-    } catch (err) {
-      console.error("Error resetting products:", err);
-      setError("Failed to reset products: " + err.message);
-    } finally {
-      setSeeding(false);
-      setLoading(false);
-    }
-  };
-
   // Initialize products if none exist
   useEffect(() => {
     const checkAndAddProducts = async () => {
@@ -302,19 +271,6 @@ const deleteProduct = async (productId) => {
     <View style={styles.container}>
       <Text style={styles.title}>Shop Now</Text>
       
-      {/* Add Sample Products Button */}
-      {__DEV__ && (
-        <TouchableOpacity
-          style={styles.addSampleBtn}
-          onPress={resetAndSeedProducts}
-          disabled={seeding}
-        >
-          <Text style={styles.addSampleBtnText}>
-            {seeding ? "Seeding Products..." : "Reset & Seed Products"}
-          </Text>
-        </TouchableOpacity>
-      )}
-
       {/* Category Filter */}
       <View style={styles.categories}>
   {[
