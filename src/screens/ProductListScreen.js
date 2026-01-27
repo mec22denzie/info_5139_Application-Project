@@ -14,6 +14,7 @@ export default function ProductListScreen({ navigation }) {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [seeding, setSeeding] = useState(false);
 
   //Local image mapping for product images
   const localImages = {
@@ -141,6 +142,36 @@ export default function ProductListScreen({ navigation }) {
       alert("Sample products added successfully!");
     } catch (e) {
       console.error("Error adding products: ", e);
+    }
+  };
+
+  const resetAndSeedProducts = async () => {
+    try {
+      setSeeding(true);
+      setLoading(true);
+      setError(null);
+
+      const productsRef = collection(firestore, "products");
+      const snapshot = await getDocs(productsRef);
+
+      if (!snapshot.empty) {
+        await Promise.all(snapshot.docs.map((docSnap) => deleteDoc(docSnap.ref)));
+      }
+
+      await addSampleProducts();
+
+      const refreshed = await getDocs(productsRef);
+      const data = refreshed.docs.map((docSnap) => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+      }));
+      setProducts(data);
+    } catch (err) {
+      console.error("Error resetting products:", err);
+      setError("Failed to reset products: " + err.message);
+    } finally {
+      setSeeding(false);
+      setLoading(false);
     }
   };
 
@@ -272,24 +303,17 @@ const deleteProduct = async (productId) => {
       <Text style={styles.title}>Shop Now</Text>
       
       {/* Add Sample Products Button */}
-      {/* <TouchableOpacity 
-        style={styles.addSampleBtn}
-        onPress={async () => {
-          try {
-            await addSampleProducts();
-            // Refresh products list
-            const productsRef = collection(firestore, "products");
-            const snapshot = await getDocs(productsRef);
-            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setProducts(data);
-          } catch (err) {
-            console.error("Error adding sample products:", err);
-            alert("Error adding sample products: " + err.message);
-          }
-        }}
-      >
-        <Text style={styles.addSampleBtnText}>Add Sample Products</Text>
-      </TouchableOpacity> */}
+      {__DEV__ && (
+        <TouchableOpacity
+          style={styles.addSampleBtn}
+          onPress={resetAndSeedProducts}
+          disabled={seeding}
+        >
+          <Text style={styles.addSampleBtnText}>
+            {seeding ? "Seeding Products..." : "Reset & Seed Products"}
+          </Text>
+        </TouchableOpacity>
+      )}
 
       {/* Category Filter */}
       <View style={styles.categories}>
