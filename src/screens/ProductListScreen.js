@@ -329,17 +329,27 @@ const deleteProduct = async (productId) => {
                   navigation.navigate("ProductDetail", {
                     product: {
                       ...item,
-                      imageSource: localImages[item.image] || require("../../assets/placeholder.jpg"),
+                      imageSource: item.imageUri
+                        ? { uri: item.imageUri }
+                        : localImages[item.image] || require("../../assets/placeholder.jpg"),
                     },
                   })
                 }
               >
                 <Image
-                  source={localImages[item.image] || require("../../assets/placeholder.jpg")}
+                  source={
+                    item.imageUri
+                      ? { uri: item.imageUri }
+                      : localImages[item.image] || require("../../assets/placeholder.jpg")
+                  }
                   style={styles.image}
                 />
                 <Text style={styles.name}>{item.name}</Text>
-                <Text style={styles.price}>${item.price}</Text>
+                {item.isDonation ? (
+                  <Text style={styles.donationTag}>Free (Donation)</Text>
+                ) : (
+                  <Text style={styles.price}>${item.price}</Text>
+                )}
               </TouchableOpacity>
 
 
@@ -444,6 +454,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
     color: "#00A34A",
+  },
+  donationTag: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1E6F60",
   },
   searchContainer: {
     flexDirection: 'row',        

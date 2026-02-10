@@ -15,11 +15,9 @@ export default function ProfileScreen({ navigation }) {
   const user = auth.currentUser;
   const displayName = user?.displayName || user?.email || "User";
 
- // Logout function: signs out the user and navigates to Login screen
+ // Logout function: signs out the user (App.js handles navigation via auth state)
   const handleLogout = () => {
-    signOut(auth)
-      .then(() => navigation.replace("LoginScreen"))
-      .catch((error) => console.error(error));
+    signOut(auth).catch((error) => console.error(error));
   };
 
    // Menu items displayed in the profile screen

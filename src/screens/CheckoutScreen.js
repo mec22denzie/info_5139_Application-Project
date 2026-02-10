@@ -77,9 +77,13 @@ export default function CheckoutScreen({ navigation }) {
   // Handle Place Order button press
   const placeOrder = async () => {
     if (!auth || !auth.currentUser) return Alert.alert('Error', 'Please login');
-    if (!selectedAddressId) return Alert.alert('Validation', 'Please select an address');
-    if (!paymentMethod) return Alert.alert('Validation', 'Please select a payment method');
-    if (!firstName || !lastName || !email || !phone) return Alert.alert('Validation', 'Please fill out all shipping info');
+    if (!firstName.trim()) return Alert.alert('Validation', 'Please enter your first name.');
+    if (!lastName.trim()) return Alert.alert('Validation', 'Please enter your last name.');
+    if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) return Alert.alert('Validation', 'Please enter a valid email address.');
+    if (!phone.trim() || !/^[\d\s\-+()]+$/.test(phone.trim())) return Alert.alert('Validation', 'Please enter a valid phone number.');
+    if (!selectedAddressId) return Alert.alert('Validation', 'Please select a shipping address.');
+    if (!paymentMethod) return Alert.alert('Validation', 'Please select a payment method.');
+    if (cartItems.length === 0) return Alert.alert('Validation', 'Your cart is empty.');
 
     try {
       setLoading(true);
