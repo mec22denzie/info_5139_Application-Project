@@ -34,7 +34,9 @@ export default function AddressesScreen({ navigation }) {
   // Add a new address
   const addAddress = async () => {
     if (!uid) return Alert.alert('Error', 'Not signed in');
-    if (!line || !city) return Alert.alert('Validation', 'Please enter address line and city');
+    if (!line.trim()) return Alert.alert('Validation', 'Please enter an address line.');
+    if (!city.trim()) return Alert.alert('Validation', 'Please enter a city.');
+    if (zip && !/^[A-Za-z0-9\s\-]+$/.test(zip.trim())) return Alert.alert('Validation', 'Please enter a valid zip/postal code.');
     try {
       const ref = await addDoc(collection(firestore, 'users', uid, 'addresses'), { line, city, zip, createdAt: new Date().toISOString() });
       const created = { id: ref.id, line, city, zip };

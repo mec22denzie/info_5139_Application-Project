@@ -7,22 +7,34 @@ import { set, ref } from "firebase/database";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db, firestore } from "../services/FirebaseConfig";
 
+// Available user roles
+const ROLES = ["Student", "Donor"];
+
 // Main SignUpScreen component
 export default function SignUpScreen({ navigation }) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("Student");
   const [loading, setLoading] = useState(false);
 
    // Function to register a new user in Firebase
   const registerWithFirebase = async () => {
-    if (!firstName || !lastName) {
-      Alert.alert("Please enter first and last name.");
+    if (!firstName.trim() || !lastName.trim()) {
+      Alert.alert("Validation", "Please enter first and last name.");
       return;
     }
-    if (email.length < 8 || password.length < 8) {
-      Alert.alert("Please enter valid email and password.");
+    if (!/^[A-Za-z\s'-]+$/.test(firstName.trim()) || !/^[A-Za-z\s'-]+$/.test(lastName.trim())) {
+      Alert.alert("Validation", "Names should only contain letters.");
+      return;
+    }
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      Alert.alert("Validation", "Please enter a valid email address.");
+      return;
+    }
+    if (password.length < 8) {
+      Alert.alert("Validation", "Password must be at least 8 characters.");
       return;
     }
 
@@ -36,16 +48,18 @@ export default function SignUpScreen({ navigation }) {
       await set(ref(db, "users/" + newUser.uid), {
         uid: newUser.uid,
         email: newUser.email,
-        firstName,
-        lastName,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        role,
         createdAt: Date.now(),
       });
 
       // Save user data to Firestore
       await setDoc(doc(firestore, "users", newUser.uid), {
         email: newUser.email,
-        firstName,
-        lastName,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        role,
         createdAt: Date.now(),
       });
 
@@ -59,7 +73,7 @@ export default function SignUpScreen({ navigation }) {
     } catch (error) {
       // Handle registration errors
       console.log("Registration Error:", error);
-      Alert.alert(error.message);
+      Alert.alert("Registration Error", error.message);
     } finally {
       setLoading(false);
     }
@@ -93,11 +107,25 @@ export default function SignUpScreen({ navigation }) {
         />
         <TextInput
           style={styles.input}
-          placeholder="Password"
+          placeholder="Password (min 8 characters)"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
         />
+
+        {/* Role Selection */}
+        <Text style={styles.roleLabel}>I am a:</Text>
+        <View style={styles.roleContainer}>
+          {ROLES.map((r) => (
+            <TouchableOpacity
+              key={r}
+              style={[styles.roleButton, role === r && styles.roleButtonActive]}
+              onPress={() => setRole(r)}
+            >
+              <Text style={[styles.roleText, role === r && styles.roleTextActive]}>{r}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
 
       {/* Register button */}
@@ -180,5 +208,40 @@ const styles = StyleSheet.create({
   link: {
     color: "#00A34A",
     fontWeight: "bold",
+  },
+  roleLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 8,
+    marginTop: 4,
+  },
+  roleContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  roleButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "#ccc",
+    alignItems: "center",
+    marginHorizontal: 4,
+    backgroundColor: "#fff",
+  },
+  roleButtonActive: {
+    borderColor: "#1E6F60",
+    backgroundColor: "#E8F5E9",
+  },
+  roleText: {
+    fontSize: 16,
+    color: "#666",
+    fontWeight: "500",
+  },
+  roleTextActive: {
+    color: "#1E6F60",
+    fontWeight: "700",
   },
 });

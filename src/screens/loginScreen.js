@@ -1,41 +1,42 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
-import { onAuthStateChanged, signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../services/FirebaseConfig";
 
 // Login Screen Component
+// Note: App.js handles auth state changes and role-based routing automatically
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Monitor auth state
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        Alert.alert("Logged in as " + currentUser.email);
-        navigation.replace("HomeTabs");
-      }
-    });
-    return () => unsubscribe();
-  }, []);
-
   // Handle user login
   const handleLogin = async () => {
-    if (email.length < 4 || password.length < 4) {
-      Alert.alert("Please enter valid credentials.");
+    if (!email.trim()) {
+      Alert.alert("Validation", "Please enter your email address.");
+      return;
+    }
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      Alert.alert("Validation", "Please enter a valid email address.");
+      return;
+    }
+    if (!password) {
+      Alert.alert("Validation", "Please enter your password.");
+      return;
+    }
+    if (password.length < 8) {
+      Alert.alert("Validation", "Password must be at least 8 characters.");
       return;
     }
 
-    // Attempt to sign in the user
+    // Attempt to sign in the user (App.js handles navigation via auth state)
     try {
       setLoading(true);
       await signInWithEmailAndPassword(auth, email, password);
       Alert.alert("Login Successful!");
-      navigation.replace("HomeTabs");
     } catch (error) {
       console.log("Login Error:", error);
-      Alert.alert(error.message);
+      Alert.alert("Login Error", error.message);
     } finally {
       setLoading(false);
     }
