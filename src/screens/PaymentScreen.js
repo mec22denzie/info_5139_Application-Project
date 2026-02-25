@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
 import { auth, firestore } from '../services/FirebaseConfig';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { isValidCardNumber, isValidExpiry } from '../utils/validation';
 
 // Payment Screen Component
 const METHODS = ['Credit Card', 'PayPal', 'Cash on Delivery'];
@@ -32,10 +33,7 @@ export default function PaymentScreen({ navigation }) {
 
   // Validate card details (basic)
   const validateCard = () => {
-    const digits = cardNumber.replace(/\s+/g, '');
-    if (!/^[0-9]{12,19}$/.test(digits)) return false;
-    if (!/^(0[1-9]|1[0-2])\/(?:\d{2})$/.test(expiry)) return false; // MM/YY
-    return true;
+    return isValidCardNumber(cardNumber) && isValidExpiry(expiry);
   };
 
   // Save selected payment method

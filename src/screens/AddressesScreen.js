@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { collection, getDocs, addDoc, deleteDoc, doc, setDoc } from 'firebase/firestore';
 import { auth, firestore } from '../services/FirebaseConfig';
+import { sanitizeText, isValidZip } from '../utils/validation';
 
 // Addresses Screen Component
 export default function AddressesScreen({ navigation }) {
@@ -34,12 +35,22 @@ export default function AddressesScreen({ navigation }) {
   // Add a new address
   const addAddress = async () => {
     if (!uid) return Alert.alert('Error', 'Not signed in');
-    if (!line.trim()) return Alert.alert('Validation', 'Please enter an address line.');
-    if (!city.trim()) return Alert.alert('Validation', 'Please enter a city.');
-    if (zip && !/^[A-Za-z0-9\s\-]+$/.test(zip.trim())) return Alert.alert('Validation', 'Please enter a valid zip/postal code.');
+    const cleanLine = sanitizeText(line);
+    const cleanCity = sanitizeText(city);
+    const cleanZip = String(zip).trim();
+
+    if (!cleanLine) return Alert.alert('Validation', 'Please enter an address line.');
+    if (cleanLine.length < 5 || cleanLine.length > 120) return Alert.alert('Validation', 'Address line must be 5-120 characters.');
+    if (!cleanCity) return Alert.alert('Validation', 'Please enter a city.');
+    if (cleanZip && !isValidZip(cleanZip)) return Alert.alert('Validation', 'Please enter a valid zip/postal code.');
     try {
-      const ref = await addDoc(collection(firestore, 'users', uid, 'addresses'), { line, city, zip, createdAt: new Date().toISOString() });
-      const created = { id: ref.id, line, city, zip };
+      const ref = await addDoc(collection(firestore, 'users', uid, 'addresses'), {
+        line: cleanLine,
+        city: cleanCity,
+        zip: cleanZip,
+        createdAt: new Date().toISOString()
+      });
+      const created = { id: ref.id, line: cleanLine, city: cleanCity, zip: cleanZip };
       const hasDefault = addresses.some(a => a.isDefault);
       if (!hasDefault) {
         await setDoc(doc(firestore, 'users', uid, 'addresses', ref.id), { isDefault: true }, { merge: true });
