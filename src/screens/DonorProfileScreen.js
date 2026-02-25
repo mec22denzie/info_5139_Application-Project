@@ -7,6 +7,7 @@ import { auth, firestore } from "../services/FirebaseConfig";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { signOut } from "firebase/auth";
+import { sanitizeText, isValidName, isValidPhone } from "../utils/validation";
 
 // Donor Profile Screen Component - Allows donors to manage their contributor profile
 export default function DonorProfileScreen({ navigation }) {
@@ -54,20 +55,31 @@ export default function DonorProfileScreen({ navigation }) {
 
   // Save updated profile to Firestore
   const handleSave = async () => {
-    if (!firstName.trim() || !lastName.trim()) {
+    const cleanFirstName = sanitizeText(firstName);
+    const cleanLastName = sanitizeText(lastName);
+    const cleanBio = bio.trim();
+    const cleanPhone = phone.trim();
+
+    if (!cleanFirstName || !cleanLastName) {
       return Alert.alert("Validation", "First and last name are required.");
     }
-    if (phone && !/^[\d\s\-+()]+$/.test(phone)) {
+    if (!isValidName(cleanFirstName) || !isValidName(cleanLastName)) {
+      return Alert.alert("Validation", "Please enter valid names.");
+    }
+    if (cleanBio.length > 300) {
+      return Alert.alert("Validation", "Bio must be 300 characters or less.");
+    }
+    if (cleanPhone && !isValidPhone(cleanPhone)) {
       return Alert.alert("Validation", "Please enter a valid phone number.");
     }
 
     try {
       setSaving(true);
       await setDoc(doc(firestore, "users", user.uid), {
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        bio: bio.trim(),
-        phone: phone.trim(),
+        firstName: cleanFirstName,
+        lastName: cleanLastName,
+        bio: cleanBio,
+        phone: cleanPhone,
       }, { merge: true });
 
       Alert.alert("Saved", "Profile updated successfully.");

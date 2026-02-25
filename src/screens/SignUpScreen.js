@@ -6,6 +6,13 @@ import { createUserWithEmailAndPassword } from "firebase/auth";
 import { set, ref } from "firebase/database";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db, firestore } from "../services/FirebaseConfig";
+import {
+  normalizeEmail,
+  sanitizeText,
+  isValidName,
+  isValidEmail,
+  isStrongPassword,
+} from "../utils/validation";
 
 // Available user roles
 const ROLES = ["Student", "Donor"];
@@ -21,44 +28,48 @@ export default function SignUpScreen({ navigation }) {
 
    // Function to register a new user in Firebase
   const registerWithFirebase = async () => {
-    if (!firstName.trim() || !lastName.trim()) {
+    const cleanFirstName = sanitizeText(firstName);
+    const cleanLastName = sanitizeText(lastName);
+    const cleanEmail = normalizeEmail(email);
+
+    if (!cleanFirstName || !cleanLastName) {
       Alert.alert("Validation", "Please enter first and last name.");
       return;
     }
-    if (!/^[A-Za-z\s'-]+$/.test(firstName.trim()) || !/^[A-Za-z\s'-]+$/.test(lastName.trim())) {
-      Alert.alert("Validation", "Names should only contain letters.");
+    if (!isValidName(cleanFirstName) || !isValidName(cleanLastName)) {
+      Alert.alert("Validation", "Names must be 2-50 letters only.");
       return;
     }
-    if (!/\S+@\S+\.\S+/.test(email)) {
+    if (!isValidEmail(cleanEmail)) {
       Alert.alert("Validation", "Please enter a valid email address.");
       return;
     }
-    if (password.length < 8) {
-      Alert.alert("Validation", "Password must be at least 8 characters.");
+    if (!isStrongPassword(password)) {
+      Alert.alert("Validation", "Password must be 8+ chars and include at least one letter and one number.");
       return;
     }
 
     try {
       setLoading(true);
       // Create user in Firebase Authentication
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
       const newUser = userCredential.user;
 
       // Save user data to Firebase Realtime Database
       await set(ref(db, "users/" + newUser.uid), {
         uid: newUser.uid,
-        email: newUser.email,
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
+        email: cleanEmail,
+        firstName: cleanFirstName,
+        lastName: cleanLastName,
         role,
         createdAt: Date.now(),
       });
 
       // Save user data to Firestore
       await setDoc(doc(firestore, "users", newUser.uid), {
-        email: newUser.email,
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
+        email: cleanEmail,
+        firstName: cleanFirstName,
+        lastName: cleanLastName,
         role,
         createdAt: Date.now(),
       });

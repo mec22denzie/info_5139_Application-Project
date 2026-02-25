@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../services/FirebaseConfig";
+import { normalizeEmail, isValidEmail } from "../utils/validation";
 
 // Login Screen Component
 // Note: App.js handles auth state changes and role-based routing automatically
@@ -12,11 +13,13 @@ export default function LoginScreen({ navigation }) {
 
   // Handle user login
   const handleLogin = async () => {
-    if (!email.trim()) {
+    const cleanEmail = normalizeEmail(email);
+
+    if (!cleanEmail) {
       Alert.alert("Validation", "Please enter your email address.");
       return;
     }
-    if (!/\S+@\S+\.\S+/.test(email)) {
+    if (!isValidEmail(cleanEmail)) {
       Alert.alert("Validation", "Please enter a valid email address.");
       return;
     }
@@ -32,7 +35,7 @@ export default function LoginScreen({ navigation }) {
     // Attempt to sign in the user (App.js handles navigation via auth state)
     try {
       setLoading(true);
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(auth, cleanEmail, password);
       Alert.alert("Login Successful!");
     } catch (error) {
       console.log("Login Error:", error);

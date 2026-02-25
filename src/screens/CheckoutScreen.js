@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, FlatList, StyleSheet, Alert, ActivityIndicator, ScrollView, TextInput } from 'react-native';
 import { auth, firestore } from '../services/FirebaseConfig';
 import { collection, query, where, getDocs, doc, addDoc, deleteDoc, setDoc } from 'firebase/firestore';
+import { sanitizeText, normalizeEmail, isValidEmail, isValidPhone } from '../utils/validation';
 
 // Checkout Screen Component
 export default function CheckoutScreen({ navigation }) {
@@ -77,10 +78,16 @@ export default function CheckoutScreen({ navigation }) {
   // Handle Place Order button press
   const placeOrder = async () => {
     if (!auth || !auth.currentUser) return Alert.alert('Error', 'Please login');
-    if (!firstName.trim()) return Alert.alert('Validation', 'Please enter your first name.');
-    if (!lastName.trim()) return Alert.alert('Validation', 'Please enter your last name.');
-    if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) return Alert.alert('Validation', 'Please enter a valid email address.');
-    if (!phone.trim() || !/^[\d\s\-+()]+$/.test(phone.trim())) return Alert.alert('Validation', 'Please enter a valid phone number.');
+
+    const cleanFirstName = sanitizeText(firstName);
+    const cleanLastName = sanitizeText(lastName);
+    const cleanEmail = normalizeEmail(email);
+    const cleanPhone = String(phone).trim();
+
+    if (!cleanFirstName) return Alert.alert('Validation', 'Please enter your first name.');
+    if (!cleanLastName) return Alert.alert('Validation', 'Please enter your last name.');
+    if (!isValidEmail(cleanEmail)) return Alert.alert('Validation', 'Please enter a valid email address.');
+    if (!isValidPhone(cleanPhone)) return Alert.alert('Validation', 'Please enter a valid phone number.');
     if (!selectedAddressId) return Alert.alert('Validation', 'Please select a shipping address.');
     if (!paymentMethod) return Alert.alert('Validation', 'Please select a payment method.');
     if (cartItems.length === 0) return Alert.alert('Validation', 'Your cart is empty.');
@@ -95,10 +102,10 @@ export default function CheckoutScreen({ navigation }) {
       const address = addrSnap.exists() ? addrSnap.data() : null;
 
       const shippingInfo = {
-        firstName,
-        lastName,
-        email,
-        phone
+        firstName: cleanFirstName,
+        lastName: cleanLastName,
+        email: cleanEmail,
+        phone: cleanPhone
       };
 
       await addDoc(collection(firestore, 'orders'), {

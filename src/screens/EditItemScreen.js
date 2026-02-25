@@ -6,6 +6,7 @@ import { doc, updateDoc } from "firebase/firestore";
 import { firestore } from "../services/FirebaseConfig";
 // Image picker import
 import * as ImagePicker from "expo-image-picker";
+import { sanitizeText, isValidPrice, toPriceNumber } from "../utils/validation";
 
 // Available categories for items
 const CATEGORIES = ["Apparel", "Electronics", "Footwear", "Books", "Furniture", "Other"];
@@ -44,29 +45,32 @@ export default function EditItemScreen({ route, navigation }) {
 
   // Validate and update the item in Firestore
   const handleUpdate = async () => {
+    const cleanName = sanitizeText(name);
+    const cleanDescription = sanitizeText(description);
+    const cleanPrice = String(price).trim();
+
     // Input validation
-    if (!name.trim()) {
+    if (!cleanName) {
       return Alert.alert("Validation", "Please enter an item name.");
     }
-    if (name.trim().length < 3) {
-      return Alert.alert("Validation", "Item name must be at least 3 characters.");
+    if (cleanName.length < 3 || cleanName.length > 80) {
+      return Alert.alert("Validation", "Item name must be 3-80 characters.");
     }
-    if (!description.trim()) {
+    if (!cleanDescription) {
       return Alert.alert("Validation", "Please enter a description.");
     }
-    if (description.trim().length < 10) {
-      return Alert.alert("Validation", "Description must be at least 10 characters.");
+    if (cleanDescription.length < 10 || cleanDescription.length > 1000) {
+      return Alert.alert("Validation", "Description must be 10-1000 characters.");
     }
     if (!category) {
       return Alert.alert("Validation", "Please select a category.");
     }
     if (!isDonation) {
-      if (!price.trim()) {
+      if (!cleanPrice) {
         return Alert.alert("Validation", "Please enter a price or mark as donation.");
       }
-      const priceNum = parseFloat(price);
-      if (isNaN(priceNum) || priceNum < 0) {
-        return Alert.alert("Validation", "Please enter a valid price (0 or more).");
+      if (!isValidPrice(cleanPrice)) {
+        return Alert.alert("Validation", "Enter a valid price (e.g. 10 or 10.99).");
       }
     }
 
@@ -75,10 +79,10 @@ export default function EditItemScreen({ route, navigation }) {
       const itemRef = doc(firestore, "products", item.id);
 
       await updateDoc(itemRef, {
-        name: name.trim(),
-        description: description.trim(),
+        name: cleanName,
+        description: cleanDescription,
         category,
-        price: isDonation ? 0 : parseFloat(price),
+        price: isDonation ? 0 : toPriceNumber(cleanPrice),
         isDonation,
         imageUri: imageUri || null,
         updatedAt: new Date().toISOString(),
