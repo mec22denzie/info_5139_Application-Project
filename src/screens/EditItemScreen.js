@@ -2,8 +2,9 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, Image, ActivityIndicator } from "react-native";
 // Firebase imports
-import { doc, updateDoc } from "firebase/firestore";
-import { firestore } from "../services/FirebaseConfig";
+import { doc, updateDoc, getDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { auth, firestore, storage } from "../services/FirebaseConfig";
 // Image picker import
 import * as ImagePicker from "expo-image-picker";
 import { sanitizeText, isValidPrice, toPriceNumber } from "../utils/validation";
@@ -43,6 +44,16 @@ export default function EditItemScreen({ route, navigation }) {
     }
   };
 
+  // Upload image to Firebase Storage and return the download URL
+  const uploadImage = async (uri) => {
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    const filename = `products/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`;
+    const storageRef = ref(storage, filename);
+    await uploadBytes(storageRef, blob);
+    return await getDownloadURL(storageRef);
+  };
+
   // Validate and update the item in Firestore
   const handleUpdate = async () => {
     const cleanName = sanitizeText(name);
@@ -78,13 +89,26 @@ export default function EditItemScreen({ route, navigation }) {
       setLoading(true);
       const itemRef = doc(firestore, "products", item.id);
 
+      // Verify ownership before updating
+      const productDoc = await getDoc(itemRef);
+      if (!productDoc.exists() || productDoc.data().donorId !== auth.currentUser?.uid) {
+        Alert.alert("Error", "You can only edit your own listings.");
+        return;
+      }
+
+      // Upload new image if it's a local file (not already a Firebase URL)
+      let finalImageUri = imageUri;
+      if (imageUri && !imageUri.startsWith("https://")) {
+        finalImageUri = await uploadImage(imageUri);
+      }
+
       await updateDoc(itemRef, {
         name: cleanName,
         description: cleanDescription,
         category,
         price: isDonation ? 0 : toPriceNumber(cleanPrice),
         isDonation,
-        imageUri: imageUri || null,
+        imageUri: finalImageUri || null,
         updatedAt: new Date().toISOString(),
       });
 

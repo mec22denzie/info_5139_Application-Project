@@ -22,6 +22,7 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 import { auth, firestore } from "../services/FirebaseConfig";
+import { logError } from "../services/errorLogger";
 
 // Cart Screen Component
 export default function CartScreen({ navigation }) {
@@ -53,8 +54,8 @@ export default function CartScreen({ navigation }) {
           setItems(Array.isArray(data.items) ? data.items : []);
         }
       } catch (err) {
-        console.error("Error fetching cart:", err);
-        Alert.alert("Error", "Failed to load cart. Check console for details.");
+        logError(err, { screen: "CartScreen", metadata: { action: "fetchCart" } });
+        Alert.alert("Error", "Failed to load cart.");
       } finally {
         setLoading(false);
       }
@@ -77,7 +78,7 @@ export default function CartScreen({ navigation }) {
       }
       setItems(newItems);
     } catch (err) {
-      console.error("Error updating cart:", err);
+      logError(err, { screen: "CartScreen", metadata: { action: "updateCart" } });
       Alert.alert("Error", "Failed to update cart.");
     }
   };
@@ -106,7 +107,7 @@ export default function CartScreen({ navigation }) {
       setItems([]);
       Alert.alert("Cart cleared");
     } catch (err) {
-      console.error("Error clearing cart:", err);
+      logError(err, { screen: "CartScreen", metadata: { action: "clearCart" } });
       Alert.alert("Error", "Failed to clear cart.");
     }
   };
@@ -138,7 +139,7 @@ export default function CartScreen({ navigation }) {
           contentContainerStyle={{ paddingBottom: 100 }}
           renderItem={({ item, index }) => (
             <View style={styles.item}>
-              <Image source={{ uri: item.image || "https://via.placeholder.com/80" }} style={styles.image} />
+              <Image source={{ uri: item.image && item.image.startsWith("https://") ? item.image : "https://via.placeholder.com/80" }} style={styles.image} />
               <View style={styles.info}>
                 <Text style={styles.name}>{item.name}</Text>
                 <Text style={styles.price}>${item.price} x {item.quantity}</Text>

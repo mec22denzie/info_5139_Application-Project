@@ -7,6 +7,7 @@ import { useFonts } from 'expo-font';
 import MyListingsScreen from "../screens/MyListingsScreen";
 import PostItemScreen from "../screens/PostItemScreen";
 import DonorProfileScreen from "../screens/DonorProfileScreen";
+import NotificationBell from "../components/NotificationBell";
 
 // Creating a Bottom Tab Navigator instance for Donor
 const Tab = createBottomTabNavigator();
@@ -25,6 +26,7 @@ export default function DonorHomeTabs({ navigation }) {
       initialRouteName="MyListings"
       screenOptions={({ route }) => ({
         headerShown: true,
+        headerRight: () => <NotificationBell navigation={navigation} />,
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
           //Render Icons

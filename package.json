@@ -30,11 +30,11 @@
     "react-native-screens": "~4.16.0",
     "react-native-vector-icons": "^10.3.0",
     "react-native-web": "^0.21.0",
-    "react-native-worklets": "0.5.1"
+    "react-native-worklets": "0.5.1",
+    "expo": "~54.0.33"
   },
   "private": true,
   "devDependencies": {
-    "expo": "~54.0.33",
     "prettier": "^3.6.2"
   }
 }

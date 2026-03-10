@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from "react-native";
 // Firebase imports
-import { collection, query, where, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { collection, query, where, getDocs, deleteDoc, doc, getDoc } from "firebase/firestore";
 import { auth, firestore } from "../services/FirebaseConfig";
 
 // My Listings Screen Component - Shows items posted by the current donor
@@ -47,6 +47,12 @@ export default function MyListingsScreen({ navigation }) {
         style: "destructive",
         onPress: async () => {
           try {
+            // Verify ownership before deleting
+            const productDoc = await getDoc(doc(firestore, "products", id));
+            if (!productDoc.exists() || productDoc.data().donorId !== auth.currentUser.uid) {
+              Alert.alert("Error", "You can only delete your own listings.");
+              return;
+            }
             await deleteDoc(doc(firestore, "products", id));
             setListings((prev) => prev.filter((item) => item.id !== id));
             Alert.alert("Deleted", "Item removed successfully.");
@@ -86,7 +92,7 @@ export default function MyListingsScreen({ navigation }) {
           renderItem={({ item }) => (
             <View style={styles.card}>
               {/* Item image */}
-              {item.imageUri ? (
+              {item.imageUri && item.imageUri.startsWith("https://") ? (
                 <Image source={{ uri: item.imageUri }} style={styles.image} />
               ) : (
                 <View style={styles.imagePlaceholder}>

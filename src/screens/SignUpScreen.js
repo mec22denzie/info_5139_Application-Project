@@ -13,6 +13,7 @@ import {
   isValidEmail,
   isStrongPassword,
 } from "../utils/validation";
+import { logError } from "../services/errorLogger";
 
 // Available user roles
 const ROLES = ["Student", "Donor"];
@@ -62,6 +63,7 @@ export default function SignUpScreen({ navigation }) {
         firstName: cleanFirstName,
         lastName: cleanLastName,
         role,
+        status: "active",
         createdAt: Date.now(),
       });
 
@@ -71,6 +73,7 @@ export default function SignUpScreen({ navigation }) {
         firstName: cleanFirstName,
         lastName: cleanLastName,
         role,
+        status: "active",
         createdAt: Date.now(),
       });
 
@@ -83,7 +86,7 @@ export default function SignUpScreen({ navigation }) {
       ]);
     } catch (error) {
       // Handle registration errors
-      console.log("Registration Error:", error);
+      logError(error, { screen: "SignUpScreen" });
       Alert.alert("Registration Error", error.message);
     } finally {
       setLoading(false);

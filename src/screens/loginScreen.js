@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../services/FirebaseConfig";
+import { signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, firestore } from "../services/FirebaseConfig";
 import { normalizeEmail, isValidEmail } from "../utils/validation";
+import { logError } from "../services/errorLogger";
 
 // Login Screen Component
 // Note: App.js handles auth state changes and role-based routing automatically
@@ -35,10 +37,19 @@ export default function LoginScreen({ navigation }) {
     // Attempt to sign in the user (App.js handles navigation via auth state)
     try {
       setLoading(true);
-      await signInWithEmailAndPassword(auth, cleanEmail, password);
+      const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
+
+      // Check if account has been disabled by an admin
+      const userDoc = await getDoc(doc(firestore, "users", userCredential.user.uid));
+      if (userDoc.exists() && userDoc.data().status === "disabled") {
+        await signOut(auth);
+        Alert.alert("Account Disabled", "Your account has been disabled. Please contact support.");
+        return;
+      }
+
       Alert.alert("Login Successful!");
     } catch (error) {
-      console.log("Login Error:", error);
+      logError(error, { screen: "LoginScreen" });
       Alert.alert("Login Error", error.message);
     } finally {
       setLoading(false);

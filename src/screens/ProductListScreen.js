@@ -2,8 +2,9 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, FlatList, Image, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
 // Import Firestore functions for CRUD operations
-import { collection, getDocs, addDoc, deleteDoc, doc } from "firebase/firestore";
+import { collection, getDocs, addDoc, deleteDoc, doc, query, where } from "firebase/firestore";
 import { firestore } from "../services/FirebaseConfig";
+import { logError } from "../services/errorLogger";
 
 import SearchBar from "../components/SearchBar";
 
@@ -14,6 +15,17 @@ export default function ProductListScreen({ navigation }) {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Helper to get valid image source (ignores old file:// paths)
+  const getImageSource = (item) => {
+    if (item.imageUri && item.imageUri.startsWith("https://")) {
+      return { uri: item.imageUri };
+    }
+    if (item.image && localImages[item.image]) {
+      return localImages[item.image];
+    }
+    return null;
+  };
 
   //Local image mapping for product images
   const localImages = {
@@ -32,7 +44,7 @@ export default function ProductListScreen({ navigation }) {
 
   // Adding Sample products to Firestone (only used when DB is empty)
   const addSampleProducts = async () => {
-    console.log("Starting to add sample products...");
+    if (__DEV__) console.log("Starting to add sample products...");
     try {
       const sampleProducts = [
         // Apparel products
@@ -133,14 +145,14 @@ export default function ProductListScreen({ navigation }) {
             description: p.description || "",
             image: p.image || "https://via.placeholder.com/100",
           });
-          console.log("Added product with ID:", docRef.id);
+          if (__DEV__) console.log("Added product with ID:", docRef.id);
         } catch (err) {
-          console.error("Error adding product:", p.name, err);
+          logError(err, { screen: "ProductListScreen", metadata: { action: "addSampleProduct", productName: p.name } });
         }
       }
       alert("Sample products added successfully!");
     } catch (e) {
-      console.error("Error adding products: ", e);
+      logError(e, { screen: "ProductListScreen", metadata: { action: "addSampleProducts" } });
     }
   };
 
@@ -148,21 +160,21 @@ export default function ProductListScreen({ navigation }) {
   useEffect(() => {
     const checkAndAddProducts = async () => {
       try {
-        console.log("Checking for existing products...");
+        if (__DEV__) console.log("Checking for existing products...");
         // Check if products exist
         const snapshot = await getDocs(collection(firestore, "products"));
-        console.log("Initial check - Number of products:", snapshot.size);
-        
+        if (__DEV__) console.log("Initial check - Number of products:", snapshot.size);
+
         if (snapshot.empty) {
-          console.log("No products found, adding sample products...");
+          if (__DEV__) console.log("No products found, adding sample products...");
           // Only add sample products if none exist
           await addSampleProducts();
-          console.log("Sample products added successfully");
+          if (__DEV__) console.log("Sample products added successfully");
         } else {
-          console.log("Products already exist, skipping sample data");
+          if (__DEV__) console.log("Products already exist, skipping sample data");
         }
       } catch (err) {
-        console.error("Error in checkAndAddProducts:", err);
+        logError(err, { screen: "ProductListScreen", metadata: { action: "checkAndAddProducts" } });
       }
     };
     checkAndAddProducts();
@@ -172,29 +184,29 @@ export default function ProductListScreen({ navigation }) {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        console.log("Starting to fetch products...");
+        if (__DEV__) console.log("Starting to fetch products...");
         setLoading(true);
-        
+
         // Check if Firestore is available
         if (!firestore) {
-          console.error("Firestore is not initialized!");
+          if (__DEV__) console.error("Firestore is not initialized!");
           setError("Database connection error");
           return;
         }
 
-        console.log("Firestore status:", !!firestore ? "initialized" : "not initialized");
-        
+        if (__DEV__) console.log("Firestore status:", !!firestore ? "initialized" : "not initialized");
+
         // Reference the "products" collection in Firestore
         const productsRef = collection(firestore, "products");
-        console.log("Products collection reference created");
-        
+        if (__DEV__) console.log("Products collection reference created");
+
         // Fetch all documents inside the "products" collection
         const snapshot = await getDocs(productsRef);
-        console.log("Snapshot received, number of products:", snapshot.size);
+        if (__DEV__) console.log("Snapshot received, number of products:", snapshot.size);
         
         // If no products exist in Firestore
         if (snapshot.empty) {
-          console.log("No products found in Firestore, attempting to add sample products...");
+          if (__DEV__) console.log("No products found in Firestore, attempting to add sample products...");
 
           // Create sample products if database is empty
           await addSampleProducts();
@@ -205,7 +217,7 @@ export default function ProductListScreen({ navigation }) {
           // Convert each document into a readable JS object
           const data = newSnapshot.docs.map(doc => {
             const productData = { id: doc.id, ...doc.data() };
-            console.log("Product found:", productData.name);
+            if (__DEV__) console.log("Product found:", productData.name);
             return productData;
           });
           setProducts(data); // Update state with new products
@@ -213,43 +225,54 @@ export default function ProductListScreen({ navigation }) {
           // If products already exist in Firestore
           const data = snapshot.docs.map(doc => {
             const productData = { id: doc.id, ...doc.data() };
-            console.log("Product found:", productData.name);
+            if (__DEV__) console.log("Product found:", productData.name);
             return productData;
           });
-          console.log("Total products processed:", data.length);
+          if (__DEV__) console.log("Total products processed:", data.length);
           setProducts(data); // Update state with existing products
         }
         setError(null); // Clear previous errors (if any)
         // Log for error debugging
       } catch (err) {
-        console.error("Detailed error fetching products:", err);
-        console.error("Error stack:", err.stack);
+        logError(err, { screen: "ProductListScreen", metadata: { action: "fetchProducts" } });
         setError("Failed to load products: " + err.message);
       } finally {
         setLoading(false);
-        console.log("Fetch products complete, loading set to false");
+        if (__DEV__) console.log("Fetch products complete, loading set to false");
       }
     };
     fetchProducts();
   }, []);
 
-  // Filter products by Category and search input
+  // Filter products by Category and search input, and hide items without images
   const filteredProducts = products.filter((p) => {
     try {
       // Check if product and its required properties exist
       if (!p || !p.name || !p.description) {
-        console.log("Invalid product data:", p);
+        if (__DEV__) console.log("Invalid product data:", p);
+        return false;
+      }
+
+      // Hide products removed by admin
+      if (p.status === "removed") {
+        return false;
+      }
+
+      // Skip any product that does not have a valid image source
+      const hasImage = !!getImageSource(p);
+      if (!hasImage) {
         return false;
       }
 
       const matchesCategory = category === "All" || p.category === category;
       const searchLower = search.toLowerCase();
-      const matchesSearch = p.name.toLowerCase().includes(searchLower) ||
+      const matchesSearch =
+        p.name.toLowerCase().includes(searchLower) ||
         p.description.toLowerCase().includes(searchLower);
 
       return matchesCategory && matchesSearch;
     } catch (err) {
-      console.error("Error filtering product:", err, p);
+      if (__DEV__) console.error("Error filtering product:", err, p);
       return false;
     }
   });
@@ -262,7 +285,7 @@ const deleteProduct = async (productId) => {
     setProducts((prevProducts) => prevProducts.filter(p => p.id !== productId));
     alert("Product deleted successfully!");
   } catch (err) {
-    console.error("Error deleting product:", err);
+    logError(err, { screen: "ProductListScreen", metadata: { action: "deleteProduct", productId } });
     alert("Failed to delete product. Try again.");
   }
 };
@@ -329,19 +352,13 @@ const deleteProduct = async (productId) => {
                   navigation.navigate("ProductDetail", {
                     product: {
                       ...item,
-                      imageSource: item.imageUri
-                        ? { uri: item.imageUri }
-                        : localImages[item.image] || require("../../assets/placeholder.jpg"),
+                      imageSource: getImageSource(item),
                     },
                   })
                 }
               >
                 <Image
-                  source={
-                    item.imageUri
-                      ? { uri: item.imageUri }
-                      : localImages[item.image] || require("../../assets/placeholder.jpg")
-                  }
+                  source={getImageSource(item)}
                   style={styles.image}
                 />
                 <Text style={styles.name}>{item.name}</Text>

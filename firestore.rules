@@ -1,0 +1,78 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: check if the caller is authenticated
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    // Helper: check if caller owns the document by userId field
+    function isOwner(userId) {
+      return isAuth() && request.auth.uid == userId;
+    }
+
+    // Users: read own doc, no client-side writes to role/status
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId)
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'status', 'disabled']);
+    }
+
+    // Products: anyone authenticated can read, donors can create, only owner can edit
+    match /products/{productId} {
+      allow read: if isAuth();
+      allow create: if isAuth();
+      allow update: if isAuth() && (
+        resource.data.donorId == request.auth.uid ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reportCount'])
+      );
+      allow delete: if isAuth() && resource.data.donorId == request.auth.uid;
+    }
+
+    // Carts: only the cart owner can read/write
+    match /carts/{cartId} {
+      allow read, write: if isAuth() && (
+        resource == null || resource.data.userId == request.auth.uid
+      );
+    }
+
+    // Orders: only the order owner can read, create requires auth
+    match /orders/{orderId} {
+      allow read: if isAuth() && resource.data.userId == request.auth.uid;
+      allow create: if isAuth();
+    }
+
+    // Reports: any authenticated user can create, no client reads (admin uses SDK)
+    match /reports/{reportId} {
+      allow create: if isAuth();
+      allow read: if isAuth();
+      allow update: if isAuth();
+    }
+
+    // Notifications: only the recipient can read/update their own
+    match /notifications/{notifId} {
+      allow read: if isAuth() && resource.data.userId == request.auth.uid;
+      allow create: if isAuth();
+      allow update: if isAuth() && resource.data.userId == request.auth.uid;
+    }
+
+    // System logs: any authenticated user can create (for error logging), read restricted
+    match /systemLogs/{logId} {
+      allow create: if isAuth();
+      allow read: if isAuth();
+    }
+
+    // Admin actions: any authenticated user can create (service writes), read restricted
+    match /adminActions/{actionId} {
+      allow create: if isAuth();
+      allow read: if isAuth();
+    }
+
+    // User addresses subcollection
+    match /users/{userId}/addresses/{addressId} {
+      allow read, write: if isOwner(userId);
+    }
+  }
+}

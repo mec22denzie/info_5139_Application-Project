@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { View, Text, Image, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { auth, firestore } from "../services/FirebaseConfig";
 import { collection, addDoc, updateDoc, arrayUnion, query, where, getDocs } from "firebase/firestore";
+import { logError } from "../services/errorLogger";
 
 // Product Detail Screen Component
 export default function ProductDetailScreen({ route, navigation }) {
@@ -53,7 +55,7 @@ export default function ProductDetailScreen({ route, navigation }) {
       // Navigate back to the Products tab
       navigation.navigate("HomeTabs", { screen: "Products" });
     } catch (error) {
-      console.error("Error adding to cart:", error);
+      logError(error, { screen: "ProductDetailScreen", metadata: { action: "addToCart", productId: product.id } });
       Alert.alert("Error", "Failed to add item to cart. Please try again.");
     }
   };
@@ -90,6 +92,15 @@ export default function ProductDetailScreen({ route, navigation }) {
       {/* Add to Cart Button */}
       <TouchableOpacity style={styles.addToCartButton} onPress={addToCart}>
         <Text style={styles.addToCartText}>Add to Cart</Text>
+      </TouchableOpacity>
+
+      {/* Report Listing Button */}
+      <TouchableOpacity
+        style={styles.reportButton}
+        onPress={() => navigation.navigate("ReportListing", { productId: product.id, productName: product.name })}
+      >
+        <Ionicons name="flag-outline" size={16} color="#FF3B30" />
+        <Text style={styles.reportText}>Report this listing</Text>
       </TouchableOpacity>
     </View>
   );
@@ -168,5 +179,17 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 18,
     fontWeight: "600",
+  },
+  reportButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 16,
+    paddingVertical: 8,
+  },
+  reportText: {
+    color: "#FF3B30",
+    fontSize: 14,
+    fontWeight: "500",
+    marginLeft: 6,
   },
 });

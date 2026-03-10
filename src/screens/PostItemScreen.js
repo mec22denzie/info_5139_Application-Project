@@ -3,10 +3,13 @@ import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, Image, ActivityIndicator } from "react-native";
 // Firebase imports
 import { collection, addDoc } from "firebase/firestore";
-import { auth, firestore } from "../services/FirebaseConfig";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { auth, firestore, storage } from "../services/FirebaseConfig";
 // Image picker import
 import * as ImagePicker from "expo-image-picker";
 import { sanitizeText, isValidPrice, toPriceNumber } from "../utils/validation";
+import { logError } from "../services/errorLogger";
+import { sendToRole } from "../services/notificationService";
 
 // Available categories for items
 const CATEGORIES = ["Apparel", "Electronics", "Footwear", "Books", "Furniture", "Other"];
@@ -60,6 +63,16 @@ export default function PostItemScreen({ navigation }) {
     }
   };
 
+  // Upload image to Firebase Storage and return the download URL
+  const uploadImage = async (uri) => {
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    const filename = `products/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`;
+    const storageRef = ref(storage, filename);
+    await uploadBytes(storageRef, blob);
+    return await getDownloadURL(storageRef);
+  };
+
   // Validate and submit the item to Firestore
   const handlePost = async () => {
     const cleanName = sanitizeText(name);
@@ -99,17 +112,32 @@ export default function PostItemScreen({ navigation }) {
       setLoading(true);
       const uid = auth.currentUser.uid;
 
+      // Upload image to Firebase Storage if one was selected
+      let uploadedImageUrl = null;
+      if (imageUri) {
+        uploadedImageUrl = await uploadImage(imageUri);
+      }
+
       await addDoc(collection(firestore, "products"), {
         name: cleanName,
         description: cleanDescription,
         category,
         price: isDonation ? 0 : toPriceNumber(cleanPrice),
         isDonation,
-        imageUri: imageUri || null,
+        imageUri: uploadedImageUrl,
         donorId: uid,
         donorEmail: auth.currentUser.email,
         createdAt: new Date().toISOString(),
       });
+
+      // Notify all admins about the new listing
+      await sendToRole(
+        "Admin",
+        "listing",
+        "New Listing Posted",
+        `A new listing "${cleanName}" was posted — check the moderation queue.`,
+        { screen: "Moderation" }
+      );
 
       Alert.alert("Success", "Your item has been posted!", [
         { text: "OK", onPress: () => {
@@ -119,7 +147,7 @@ export default function PostItemScreen({ navigation }) {
         }},
       ]);
     } catch (err) {
-      console.error("Error posting item:", err);
+      logError(err, { screen: "PostItemScreen", metadata: { action: "postItem", itemName: cleanName } });
       Alert.alert("Error", "Failed to post item. Please try again.");
     } finally {
       setLoading(false);

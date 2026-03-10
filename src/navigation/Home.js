@@ -7,6 +7,7 @@ import { useFonts } from 'expo-font';
 import ProductListScreen from "../screens/ProductListScreen";
 import CartScreen from "../screens/CartScreen";
 import ProfileScreen from "../screens/ProfileScreen";
+import NotificationBell from "../components/NotificationBell";
 
 // Creating a Bottom Tab Navigator instance
 const Tab = createBottomTabNavigator();
@@ -25,6 +26,7 @@ export default function HomeTabs({ navigation }) {
       initialRouteName="Products"
       screenOptions={({ route }) => ({
         headerShown: true,
+        headerRight: () => <NotificationBell navigation={navigation} />,
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
           //Render Icons

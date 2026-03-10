@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, FlatList, StyleSheet, Alert, ActivityIndicator, ScrollView, TextInput } from 'react-native';
 import { auth, firestore } from '../services/FirebaseConfig';
-import { collection, query, where, getDocs, doc, addDoc, deleteDoc, setDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, addDoc, deleteDoc, setDoc, getDoc } from 'firebase/firestore';
 import { sanitizeText, normalizeEmail, isValidEmail, isValidPhone } from '../utils/validation';
+import { logError } from '../services/errorLogger';
+import { sendNotification } from '../services/notificationService';
 
 // Checkout Screen Component
 export default function CheckoutScreen({ navigation }) {
@@ -42,7 +44,6 @@ export default function CheckoutScreen({ navigation }) {
         }
         // Fetch user info for payment method
         const userDocRef = doc(firestore, 'users', uid);
-        const { getDoc } = await import('firebase/firestore');
         const userSnap = await getDoc(userDocRef);
         if (userSnap.exists()) {
           const data = userSnap.data();
@@ -58,7 +59,7 @@ export default function CheckoutScreen({ navigation }) {
           setPhone(data.phone || '');
         }
       } catch (err) {
-        console.error('Checkout load error', err);
+        logError(err, { screen: 'CheckoutScreen', metadata: { action: 'loadCheckoutData' } });
         Alert.alert('Error', 'Failed to load checkout data');
       } finally { setLoading(false); }
     };
@@ -95,8 +96,24 @@ export default function CheckoutScreen({ navigation }) {
     try {
       setLoading(true);
       const uid = auth.currentUser.uid;
-      
-      const { getDoc } = await import('firebase/firestore');
+
+      // Re-fetch current prices from Firestore to prevent price manipulation
+      const verifiedItems = [];
+      for (const item of cartItems) {
+        if (!item.productId) {
+          verifiedItems.push(item);
+          continue;
+        }
+        const productSnap = await getDoc(doc(firestore, 'products', item.productId));
+        if (!productSnap.exists()) {
+          return Alert.alert('Error', `Product "${item.name}" is no longer available.`);
+        }
+        const currentPrice = productSnap.data().price;
+        verifiedItems.push({ ...item, price: currentPrice });
+      }
+
+      const verifiedSubtotal = verifiedItems.reduce((s, it) => s + (Number(it.price || 0) * Number(it.quantity || 1)), 0);
+
       const addrRef = doc(firestore, 'users', uid, 'addresses', selectedAddressId);
       const addrSnap = await getDoc(addrRef);
       const address = addrSnap.exists() ? addrSnap.data() : null;
@@ -110,8 +127,8 @@ export default function CheckoutScreen({ navigation }) {
 
       await addDoc(collection(firestore, 'orders'), {
         userId: uid,
-        items: cartItems,
-        total: subtotal,
+        items: verifiedItems,
+        total: verifiedSubtotal,
         status: 'Placed',
         address: address,
         shippingInfo: shippingInfo,
@@ -123,11 +140,25 @@ export default function CheckoutScreen({ navigation }) {
       const cartSnap = await getDocs(cartQ);
       for (const c of cartSnap.docs) await deleteDoc(doc(firestore, 'carts', c.id));
 
+      // Send notifications to donors whose items were ordered
+      const donorIds = [...new Set(cartItems.filter((it) => it.donorId).map((it) => it.donorId))];
+      for (const donorId of donorIds) {
+        const donorItems = cartItems.filter((it) => it.donorId === donorId);
+        const itemNames = donorItems.map((it) => it.name).join(", ");
+        await sendNotification(
+          donorId,
+          "order_placed",
+          "New Order Received",
+          `Someone ordered: ${itemNames}`,
+          { screen: "MyListings" }
+        );
+      }
+
       Alert.alert('Order placed', 'Your order has been placed.', [
         { text: 'OK', onPress: () => navigation.navigate('Orders') }
       ]);
     } catch (err) {
-      console.error('Place order error', err);
+      logError(err, { screen: 'CheckoutScreen', metadata: { action: 'placeOrder' } });
       Alert.alert('Error', 'Failed to place order');
     } finally { setLoading(false); }
   };
@@ -149,12 +180,14 @@ export default function CheckoutScreen({ navigation }) {
           style={styles.input}
           value={firstName}
           onChangeText={setFirstName}
+          maxLength={50}
         />
         <TextInput
           placeholder="Last Name"
           style={styles.input}
           value={lastName}
           onChangeText={setLastName}
+          maxLength={50}
         />
         <TextInput
           placeholder="Email"
@@ -162,6 +195,7 @@ export default function CheckoutScreen({ navigation }) {
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
+          maxLength={100}
         />
         <TextInput
           placeholder="Phone Number"
@@ -169,6 +203,7 @@ export default function CheckoutScreen({ navigation }) {
           value={phone}
           onChangeText={setPhone}
           keyboardType="phone-pad"
+          maxLength={20}
         />
 
         {selectedAddress ? (
