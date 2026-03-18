@@ -3,9 +3,8 @@ import React, { useState } from "react";
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 // Firebase authentication and database imports
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { set, ref } from "firebase/database";
 import { doc, setDoc } from "firebase/firestore";
-import { auth, db, firestore } from "../services/FirebaseConfig";
+import { auth, firestore } from "../services/FirebaseConfig";
 import {
   normalizeEmail,
   sanitizeText,
@@ -55,17 +54,6 @@ export default function SignUpScreen({ navigation }) {
       // Create user in Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
       const newUser = userCredential.user;
-
-      // Save user data to Firebase Realtime Database
-      await set(ref(db, "users/" + newUser.uid), {
-        uid: newUser.uid,
-        email: cleanEmail,
-        firstName: cleanFirstName,
-        lastName: cleanLastName,
-        role,
-        status: "active",
-        createdAt: Date.now(),
-      });
 
       // Save user data to Firestore
       await setDoc(doc(firestore, "users", newUser.uid), {
