@@ -51,7 +51,12 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
-          const userDoc = await getDoc(doc(firestore, "users", user.uid));
+          let userDoc = await getDoc(doc(firestore, "users", user.uid));
+          // Retry once if doc not found yet (signup may still be writing)
+          if (!userDoc.exists()) {
+            await new Promise((r) => setTimeout(r, 1500));
+            userDoc = await getDoc(doc(firestore, "users", user.uid));
+          }
           if (userDoc.exists()) {
             setUserRole(userDoc.data().role || "Student");
           } else {
