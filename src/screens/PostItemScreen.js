@@ -1,6 +1,6 @@
 //React and React Native imports
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, Image, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image, ActivityIndicator } from "react-native";
 // Firebase imports
 import { collection, addDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -10,6 +10,7 @@ import * as ImagePicker from "expo-image-picker";
 import { sanitizeText, isValidPrice, toPriceNumber } from "../utils/validation";
 import { logError } from "../services/errorLogger";
 import { sendToRole } from "../services/notificationService";
+import { showAlert } from "../utils/alert";
 
 // Available categories for items
 const CATEGORIES = ["Apparel", "Electronics", "Footwear", "Books", "Furniture", "Other"];
@@ -28,7 +29,7 @@ export default function PostItemScreen({ navigation }) {
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Permission Denied", "Camera roll permission is needed to upload images.");
+      showAlert("Permission Denied", "Camera roll permission is needed to upload images.");
       return;
     }
 
@@ -48,7 +49,7 @@ export default function PostItemScreen({ navigation }) {
   const takePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Permission Denied", "Camera permission is needed to take photos.");
+      showAlert("Permission Denied", "Camera permission is needed to take photos.");
       return;
     }
 
@@ -81,31 +82,31 @@ export default function PostItemScreen({ navigation }) {
 
     // Input validation
     if (!cleanName) {
-      return Alert.alert("Validation", "Please enter an item name.");
+      return showAlert("Validation", "Please enter an item name.");
     }
     if (cleanName.length < 3 || cleanName.length > 80) {
-      return Alert.alert("Validation", "Item name must be 3-80 characters.");
+      return showAlert("Validation", "Item name must be 3-80 characters.");
     }
     if (!cleanDescription) {
-      return Alert.alert("Validation", "Please enter a description.");
+      return showAlert("Validation", "Please enter a description.");
     }
     if (cleanDescription.length < 10 || cleanDescription.length > 1000) {
-      return Alert.alert("Validation", "Description must be 10-1000 characters.");
+      return showAlert("Validation", "Description must be 10-1000 characters.");
     }
     if (!category) {
-      return Alert.alert("Validation", "Please select a category.");
+      return showAlert("Validation", "Please select a category.");
     }
     if (!isDonation) {
       if (!cleanPrice) {
-        return Alert.alert("Validation", "Please enter a price or mark as donation.");
+        return showAlert("Validation", "Please enter a price or mark as donation.");
       }
       if (!isValidPrice(cleanPrice)) {
-        return Alert.alert("Validation", "Enter a valid price (e.g. 10 or 10.99).");
+        return showAlert("Validation", "Enter a valid price (e.g. 10 or 10.99).");
       }
     }
 
     if (!auth || !auth.currentUser) {
-      return Alert.alert("Error", "Please log in to post items.");
+      return showAlert("Error", "Please log in to post items.");
     }
 
     try {
@@ -139,7 +140,7 @@ export default function PostItemScreen({ navigation }) {
         { screen: "Moderation" }
       );
 
-      Alert.alert("Success", "Your item has been posted!", [
+      showAlert("Success", "Your item has been posted!", [
         { text: "OK", onPress: () => {
           // Reset form
           setName(""); setDescription(""); setCategory(""); setPrice(""); setIsDonation(false); setImageUri(null);
@@ -148,7 +149,7 @@ export default function PostItemScreen({ navigation }) {
       ]);
     } catch (err) {
       logError(err, { screen: "PostItemScreen", metadata: { action: "postItem", itemName: cleanName } });
-      Alert.alert("Error", "Failed to post item. Please try again.");
+      showAlert("Error", "Failed to post item. Please try again.");
     } finally {
       setLoading(false);
     }

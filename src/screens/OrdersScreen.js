@@ -7,12 +7,12 @@ import {
   StyleSheet,
   ActivityIndicator,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
 
 // Firebase imports
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, firestore } from '../services/FirebaseConfig';
+import { showAlert } from "../utils/alert";
 
 export default function OrdersScreen({ navigation }) {
   // State for orders and loading indicator
@@ -48,7 +48,7 @@ export default function OrdersScreen({ navigation }) {
 
   // Handle Track Order button press
   const handleTrackOrder = (order) => {
-    Alert.alert(`Order #${order.id}`, `Status: ${order.status || 'Unknown'}`, [{ text: 'OK' }]);
+    showAlert(`Order #${order.id}`, `Status: ${order.status || 'Unknown'}`, [{ text: 'OK' }]);
   };
 
   // Show loading indicator while fetching orders

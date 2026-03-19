@@ -7,7 +7,6 @@ import {
   Image,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ActivityIndicator,
   ScrollView,
 } from "react-native";
@@ -23,6 +22,7 @@ import {
 } from "firebase/firestore";
 import { auth, firestore } from "../services/FirebaseConfig";
 import { logError } from "../services/errorLogger";
+import { showAlert } from "../utils/alert";
 
 // Cart Screen Component
 export default function CartScreen({ navigation }) {
@@ -55,7 +55,7 @@ export default function CartScreen({ navigation }) {
         }
       } catch (err) {
         logError(err, { screen: "CartScreen", metadata: { action: "fetchCart" } });
-        Alert.alert("Error", "Failed to load cart.");
+        showAlert("Error", "Failed to load cart.");
       } finally {
         setLoading(false);
       }
@@ -79,7 +79,7 @@ export default function CartScreen({ navigation }) {
       setItems(newItems);
     } catch (err) {
       logError(err, { screen: "CartScreen", metadata: { action: "updateCart" } });
-      Alert.alert("Error", "Failed to update cart.");
+      showAlert("Error", "Failed to update cart.");
     }
   };
 
@@ -105,10 +105,10 @@ export default function CartScreen({ navigation }) {
       await deleteDoc(doc(firestore, "carts", cartDocId));
       setCartDocId(null);
       setItems([]);
-      Alert.alert("Cart cleared");
+      showAlert("Cart cleared");
     } catch (err) {
       logError(err, { screen: "CartScreen", metadata: { action: "clearCart" } });
-      Alert.alert("Error", "Failed to clear cart.");
+      showAlert("Error", "Failed to clear cart.");
     }
   };
 
@@ -166,7 +166,7 @@ export default function CartScreen({ navigation }) {
         <Text style={styles.total}>Subtotal: ${subtotal.toFixed(2)}</Text>
         <View style={styles.footerButtons}>
           <TouchableOpacity style={styles.clearBtn} onPress={() => {
-            Alert.alert("Clear cart", "Are you sure?", [
+            showAlert("Clear cart", "Are you sure?", [
               { text: "Cancel", style: "cancel" },
               { text: "Clear", style: "destructive", onPress: clearCart }
             ]);

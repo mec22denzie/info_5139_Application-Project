@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { View, Text, Image, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { auth, firestore } from "../services/FirebaseConfig";
 import { collection, addDoc, updateDoc, arrayUnion, query, where, getDocs } from "firebase/firestore";
 import { logError } from "../services/errorLogger";
+import { showAlert } from "../utils/alert";
 
 // Product Detail Screen Component
 export default function ProductDetailScreen({ route, navigation }) {
@@ -14,7 +15,7 @@ export default function ProductDetailScreen({ route, navigation }) {
   const addToCart = async () => {
     try {
       if (!auth.currentUser) {
-        Alert.alert("Error", "Please login to add items to cart");
+        showAlert("Error", "Please login to add items to cart");
         return;
       }
 
@@ -50,13 +51,13 @@ export default function ProductDetailScreen({ route, navigation }) {
           updatedAt: new Date().toISOString(),
         });
       }
-      Alert.alert("Success", "Item added to cart");
+      showAlert("Success", "Item added to cart");
 
       // Navigate back to the Products tab
       navigation.navigate("HomeTabs", { screen: "Products" });
     } catch (error) {
       logError(error, { screen: "ProductDetailScreen", metadata: { action: "addToCart", productId: product.id } });
-      Alert.alert("Error", "Failed to add item to cart. Please try again.");
+      showAlert("Error", "Failed to add item to cart. Please try again.");
     }
   };
 

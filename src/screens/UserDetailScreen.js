@@ -7,7 +7,6 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ActivityIndicator,
   ScrollView,
 } from "react-native";
@@ -15,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { getUserById, disableUser, enableUser, changeUserRole } from "../services/adminService";
 import { auth } from "../services/FirebaseConfig";
 import { logError } from "../services/errorLogger";
+import { showAlert } from "../utils/alert";
 
 // Available roles an admin can assign
 const ROLES = ["Student", "Donor", "Admin"];
@@ -33,7 +33,7 @@ export default function UserDetailScreen({ route, navigation }) {
         setUser(data);
       } catch (error) {
         logError(error, { screen: "UserDetailScreen" });
-        Alert.alert("Error", "Failed to load user details.");
+        showAlert("Error", "Failed to load user details.");
       } finally {
         setLoading(false);
       }
@@ -46,7 +46,7 @@ export default function UserDetailScreen({ route, navigation }) {
     const isDisabled = user.status === "disabled";
     const actionLabel = isDisabled ? "enable" : "disable";
 
-    Alert.alert(
+    showAlert(
       `${isDisabled ? "Enable" : "Disable"} Account`,
       `Are you sure you want to ${actionLabel} this user's account?`,
       [
@@ -66,10 +66,10 @@ export default function UserDetailScreen({ route, navigation }) {
               // Refresh user data
               const updated = await getUserById(userId);
               setUser(updated);
-              Alert.alert("Success", `Account ${actionLabel}d successfully.`);
+              showAlert("Success", `Account ${actionLabel}d successfully.`);
             } catch (error) {
               logError(error, { screen: "UserDetailScreen", metadata: { action: actionLabel } });
-              Alert.alert("Error", `Failed to ${actionLabel} account.`);
+              showAlert("Error", `Failed to ${actionLabel} account.`);
             } finally {
               setActionLoading(false);
             }
@@ -83,7 +83,7 @@ export default function UserDetailScreen({ route, navigation }) {
   const handleChangeRole = (newRole) => {
     if (newRole === user.role) return;
 
-    Alert.alert(
+    showAlert(
       "Change Role",
       `Change role from "${user.role}" to "${newRole}"?`,
       [
@@ -97,10 +97,10 @@ export default function UserDetailScreen({ route, navigation }) {
               await changeUserRole(userId, newRole, adminUid);
               const updated = await getUserById(userId);
               setUser(updated);
-              Alert.alert("Success", `Role changed to ${newRole}.`);
+              showAlert("Success", `Role changed to ${newRole}.`);
             } catch (error) {
               logError(error, { screen: "UserDetailScreen", metadata: { action: "changeRole", newRole } });
-              Alert.alert("Error", "Failed to change role.");
+              showAlert("Error", "Failed to change role.");
             } finally {
               setActionLoading(false);
             }

@@ -1,6 +1,6 @@
 //React and React Native imports
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, Image, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image, ActivityIndicator } from "react-native";
 // Firebase imports
 import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -8,6 +8,7 @@ import { auth, firestore, storage } from "../services/FirebaseConfig";
 // Image picker import
 import * as ImagePicker from "expo-image-picker";
 import { sanitizeText, isValidPrice, toPriceNumber } from "../utils/validation";
+import { showAlert } from "../utils/alert";
 
 // Available categories for items
 const CATEGORIES = ["Apparel", "Electronics", "Footwear", "Books", "Furniture", "Other"];
@@ -28,7 +29,7 @@ export default function EditItemScreen({ route, navigation }) {
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Permission Denied", "Camera roll permission is needed to upload images.");
+      showAlert("Permission Denied", "Camera roll permission is needed to upload images.");
       return;
     }
 
@@ -62,26 +63,26 @@ export default function EditItemScreen({ route, navigation }) {
 
     // Input validation
     if (!cleanName) {
-      return Alert.alert("Validation", "Please enter an item name.");
+      return showAlert("Validation", "Please enter an item name.");
     }
     if (cleanName.length < 3 || cleanName.length > 80) {
-      return Alert.alert("Validation", "Item name must be 3-80 characters.");
+      return showAlert("Validation", "Item name must be 3-80 characters.");
     }
     if (!cleanDescription) {
-      return Alert.alert("Validation", "Please enter a description.");
+      return showAlert("Validation", "Please enter a description.");
     }
     if (cleanDescription.length < 10 || cleanDescription.length > 1000) {
-      return Alert.alert("Validation", "Description must be 10-1000 characters.");
+      return showAlert("Validation", "Description must be 10-1000 characters.");
     }
     if (!category) {
-      return Alert.alert("Validation", "Please select a category.");
+      return showAlert("Validation", "Please select a category.");
     }
     if (!isDonation) {
       if (!cleanPrice) {
-        return Alert.alert("Validation", "Please enter a price or mark as donation.");
+        return showAlert("Validation", "Please enter a price or mark as donation.");
       }
       if (!isValidPrice(cleanPrice)) {
-        return Alert.alert("Validation", "Enter a valid price (e.g. 10 or 10.99).");
+        return showAlert("Validation", "Enter a valid price (e.g. 10 or 10.99).");
       }
     }
 
@@ -92,7 +93,7 @@ export default function EditItemScreen({ route, navigation }) {
       // Verify ownership before updating
       const productDoc = await getDoc(itemRef);
       if (!productDoc.exists() || productDoc.data().donorId !== auth.currentUser?.uid) {
-        Alert.alert("Error", "You can only edit your own listings.");
+        showAlert("Error", "You can only edit your own listings.");
         return;
       }
 
@@ -112,12 +113,12 @@ export default function EditItemScreen({ route, navigation }) {
         updatedAt: new Date().toISOString(),
       });
 
-      Alert.alert("Success", "Item updated successfully!", [
+      showAlert("Success", "Item updated successfully!", [
         { text: "OK", onPress: () => navigation.goBack() },
       ]);
     } catch (err) {
       console.error("Error updating item:", err);
-      Alert.alert("Error", "Failed to update item. Please try again.");
+      showAlert("Error", "Failed to update item. Please try again.");
     } finally {
       setLoading(false);
     }

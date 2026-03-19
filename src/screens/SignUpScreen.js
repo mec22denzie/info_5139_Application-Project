@@ -1,6 +1,6 @@
 //React and React Native imports
 import React, { useState } from "react";
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, ActivityIndicator } from "react-native";
 // Firebase authentication and database imports
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
@@ -13,6 +13,7 @@ import {
   isStrongPassword,
 } from "../utils/validation";
 import { logError } from "../services/errorLogger";
+import { showAlert } from "../utils/alert";
 
 // Available user roles
 const ROLES = ["Student", "Donor"];
@@ -33,19 +34,19 @@ export default function SignUpScreen({ navigation }) {
     const cleanEmail = normalizeEmail(email);
 
     if (!cleanFirstName || !cleanLastName) {
-      Alert.alert("Validation", "Please enter first and last name.");
+      showAlert("Validation", "Please enter first and last name.");
       return;
     }
     if (!isValidName(cleanFirstName) || !isValidName(cleanLastName)) {
-      Alert.alert("Validation", "Names must be 2-50 letters only.");
+      showAlert("Validation", "Names must be 2-50 letters only.");
       return;
     }
     if (!isValidEmail(cleanEmail)) {
-      Alert.alert("Validation", "Please enter a valid email address.");
+      showAlert("Validation", "Please enter a valid email address.");
       return;
     }
     if (!isStrongPassword(password)) {
-      Alert.alert("Validation", "Password must be 8+ chars and include at least one letter and one number.");
+      showAlert("Validation", "Password must be 8+ chars and include at least one letter and one number.");
       return;
     }
 
@@ -69,13 +70,13 @@ export default function SignUpScreen({ navigation }) {
       await auth.signOut();
 
       // Show success alert and navigate to Login screen
-      Alert.alert("Registration Successful!", "Please log in.", [
+      showAlert("Registration Successful!", "Please log in.", [
         { text: "OK", onPress: () => navigation.replace("Login") },
       ]);
     } catch (error) {
       // Handle registration errors
       logError(error, { screen: "SignUpScreen" });
-      Alert.alert("Registration Error", error.message);
+      showAlert("Registration Error", error.message);
     } finally {
       setLoading(false);
     }

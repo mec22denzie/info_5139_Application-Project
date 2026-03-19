@@ -7,7 +7,6 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ActivityIndicator,
   ScrollView,
 } from "react-native";
@@ -15,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { getProductById, dismissReport, removeListing } from "../services/moderationService";
 import { auth } from "../services/FirebaseConfig";
 import { logError } from "../services/errorLogger";
+import { showAlert } from "../utils/alert";
 
 export default function ModerationDetailScreen({ route, navigation }) {
   const { reportId, report } = route.params;
@@ -46,7 +46,7 @@ export default function ModerationDetailScreen({ route, navigation }) {
 
   // Dismiss the report (listing stays active)
   const handleDismiss = () => {
-    Alert.alert(
+    showAlert(
       "Dismiss Report",
       "This will mark the report as dismissed. The listing will stay active.",
       [
@@ -57,12 +57,12 @@ export default function ModerationDetailScreen({ route, navigation }) {
             try {
               setActionLoading(true);
               await dismissReport(reportId, auth.currentUser.uid);
-              Alert.alert("Done", "Report dismissed.", [
+              showAlert("Done", "Report dismissed.", [
                 { text: "OK", onPress: () => navigation.goBack() },
               ]);
             } catch (error) {
               logError(error, { screen: "ModerationDetailScreen", metadata: { action: "dismiss" } });
-              Alert.alert("Error", "Failed to dismiss report.");
+              showAlert("Error", "Failed to dismiss report.");
             } finally {
               setActionLoading(false);
             }
@@ -74,7 +74,7 @@ export default function ModerationDetailScreen({ route, navigation }) {
 
   // Remove the listing (product hidden from browse)
   const handleRemove = () => {
-    Alert.alert(
+    showAlert(
       "Remove Listing",
       "This will remove the listing from the platform. This action cannot be easily undone.",
       [
@@ -86,12 +86,12 @@ export default function ModerationDetailScreen({ route, navigation }) {
             try {
               setActionLoading(true);
               await removeListing(reportId, report.productId, auth.currentUser.uid);
-              Alert.alert("Done", "Listing removed.", [
+              showAlert("Done", "Listing removed.", [
                 { text: "OK", onPress: () => navigation.goBack() },
               ]);
             } catch (error) {
               logError(error, { screen: "ModerationDetailScreen", metadata: { action: "remove" } });
-              Alert.alert("Error", "Failed to remove listing.");
+              showAlert("Error", "Failed to remove listing.");
             } finally {
               setActionLoading(false);
             }

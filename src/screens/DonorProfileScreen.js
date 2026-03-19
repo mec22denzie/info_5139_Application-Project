@@ -1,6 +1,6 @@
 //React and React Native imports
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 // Firebase imports
 import { auth, firestore } from "../services/FirebaseConfig";
@@ -8,6 +8,7 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { sanitizeText, isValidName, isValidPhone } from "../utils/validation";
+import { showAlert } from "../utils/alert";
 
 // Donor Profile Screen Component - Allows donors to manage their contributor profile
 export default function DonorProfileScreen({ navigation }) {
@@ -61,16 +62,16 @@ export default function DonorProfileScreen({ navigation }) {
     const cleanPhone = phone.trim();
 
     if (!cleanFirstName || !cleanLastName) {
-      return Alert.alert("Validation", "First and last name are required.");
+      return showAlert("Validation", "First and last name are required.");
     }
     if (!isValidName(cleanFirstName) || !isValidName(cleanLastName)) {
-      return Alert.alert("Validation", "Please enter valid names.");
+      return showAlert("Validation", "Please enter valid names.");
     }
     if (cleanBio.length > 300) {
-      return Alert.alert("Validation", "Bio must be 300 characters or less.");
+      return showAlert("Validation", "Bio must be 300 characters or less.");
     }
     if (cleanPhone && !isValidPhone(cleanPhone)) {
-      return Alert.alert("Validation", "Please enter a valid phone number.");
+      return showAlert("Validation", "Please enter a valid phone number.");
     }
 
     try {
@@ -82,11 +83,11 @@ export default function DonorProfileScreen({ navigation }) {
         phone: cleanPhone,
       }, { merge: true });
 
-      Alert.alert("Saved", "Profile updated successfully.");
+      showAlert("Saved", "Profile updated successfully.");
       setEditing(false);
     } catch (err) {
       console.error("Error saving profile:", err);
-      Alert.alert("Error", "Failed to save profile.");
+      showAlert("Error", "Failed to save profile.");
     } finally {
       setSaving(false);
     }

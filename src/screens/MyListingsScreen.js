@@ -1,9 +1,10 @@
 //React and React Native imports
 import React, { useEffect, useState, useCallback } from "react";
-import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from "react-native";
+import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
 // Firebase imports
 import { collection, query, where, getDocs, deleteDoc, doc, getDoc } from "firebase/firestore";
 import { auth, firestore } from "../services/FirebaseConfig";
+import { showAlert } from "../utils/alert";
 
 // My Listings Screen Component - Shows items posted by the current donor
 export default function MyListingsScreen({ navigation }) {
@@ -25,7 +26,7 @@ export default function MyListingsScreen({ navigation }) {
       setListings(data);
     } catch (err) {
       console.error("Error fetching listings:", err);
-      Alert.alert("Error", "Failed to load your listings.");
+      showAlert("Error", "Failed to load your listings.");
     } finally {
       setLoading(false);
     }
@@ -39,8 +40,8 @@ export default function MyListingsScreen({ navigation }) {
   }, [navigation, fetchListings]);
 
   // Delete a listing from Firestore
-  const deleteListing = async (id) => {
-    Alert.alert("Delete Listing", "Are you sure you want to delete this item?", [
+  const deleteListing = (id) => {
+    showAlert("Delete Listing", "Are you sure you want to delete this item?", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Delete",
@@ -50,15 +51,15 @@ export default function MyListingsScreen({ navigation }) {
             // Verify ownership before deleting
             const productDoc = await getDoc(doc(firestore, "products", id));
             if (!productDoc.exists() || productDoc.data().donorId !== auth.currentUser.uid) {
-              Alert.alert("Error", "You can only delete your own listings.");
+              showAlert("Error", "You can only delete your own listings.");
               return;
             }
             await deleteDoc(doc(firestore, "products", id));
             setListings((prev) => prev.filter((item) => item.id !== id));
-            Alert.alert("Deleted", "Item removed successfully.");
+            showAlert("Deleted", "Item removed successfully.");
           } catch (err) {
             console.error("Error deleting listing:", err);
-            Alert.alert("Error", "Failed to delete item.");
+            showAlert("Error", "Failed to delete item.");
           }
         },
       },

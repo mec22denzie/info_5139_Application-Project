@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
 import { auth, firestore } from '../services/FirebaseConfig';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { isValidCardNumber, isValidExpiry } from '../utils/validation';
+import { showAlert } from "../utils/alert";
 
 // Payment Screen Component
 const METHODS = ['Credit Card', 'PayPal', 'Cash on Delivery'];
@@ -38,28 +39,28 @@ export default function PaymentScreen({ navigation }) {
 
   // Save selected payment method
   const save = async () => {
-    if (!selected) return Alert.alert('Validation', 'Please select a payment method');
+    if (!selected) return showAlert('Validation', 'Please select a payment method');
 
     if (selected === 'Credit Card') {
       if (!validateCard()) {
-        return Alert.alert('Validation', 'Please enter a valid card number and expiry (MM/YY)');
+        return showAlert('Validation', 'Please enter a valid card number and expiry (MM/YY)');
       }
       // Card details NOT stored – only method saved
     }
 
     try {
-      if (!auth || !auth.currentUser) return Alert.alert('Error', 'Not signed in');
+      if (!auth || !auth.currentUser) return showAlert('Error', 'Not signed in');
       const uid = auth.currentUser.uid;
 
       await setDoc(doc(firestore, 'users', uid), {
         selectedPaymentMethod: selected
       }, { merge: true });
 
-      Alert.alert('Saved', 'Payment method saved (dummy, card not stored)');
+      showAlert('Saved', 'Payment method saved (dummy, card not stored)');
       navigation.goBack();
     } catch (err) {
       console.error('Error saving payment method', err);
-      Alert.alert('Error', 'Could not save payment method');
+      showAlert('Error', 'Could not save payment method');
     }
   };
 

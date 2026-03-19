@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, FlatList, StyleSheet, Alert, ActivityIndicator, ScrollView, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator, ScrollView, TextInput } from 'react-native';
 import { auth, firestore } from '../services/FirebaseConfig';
 import { collection, query, where, getDocs, doc, addDoc, deleteDoc, setDoc, getDoc } from 'firebase/firestore';
 import { sanitizeText, normalizeEmail, isValidEmail, isValidPhone } from '../utils/validation';
 import { logError } from '../services/errorLogger';
 import { sendNotification } from '../services/notificationService';
+import { showAlert } from "../utils/alert";
 
 // Checkout Screen Component
 export default function CheckoutScreen({ navigation }) {
@@ -60,7 +61,7 @@ export default function CheckoutScreen({ navigation }) {
         }
       } catch (err) {
         logError(err, { screen: 'CheckoutScreen', metadata: { action: 'loadCheckoutData' } });
-        Alert.alert('Error', 'Failed to load checkout data');
+        showAlert('Error', 'Failed to load checkout data');
       } finally { setLoading(false); }
     };
 
@@ -78,20 +79,20 @@ export default function CheckoutScreen({ navigation }) {
 
   // Handle Place Order button press
   const placeOrder = async () => {
-    if (!auth || !auth.currentUser) return Alert.alert('Error', 'Please login');
+    if (!auth || !auth.currentUser) return showAlert('Error', 'Please login');
 
     const cleanFirstName = sanitizeText(firstName);
     const cleanLastName = sanitizeText(lastName);
     const cleanEmail = normalizeEmail(email);
     const cleanPhone = String(phone).trim();
 
-    if (!cleanFirstName) return Alert.alert('Validation', 'Please enter your first name.');
-    if (!cleanLastName) return Alert.alert('Validation', 'Please enter your last name.');
-    if (!isValidEmail(cleanEmail)) return Alert.alert('Validation', 'Please enter a valid email address.');
-    if (!isValidPhone(cleanPhone)) return Alert.alert('Validation', 'Please enter a valid phone number.');
-    if (!selectedAddressId) return Alert.alert('Validation', 'Please select a shipping address.');
-    if (!paymentMethod) return Alert.alert('Validation', 'Please select a payment method.');
-    if (cartItems.length === 0) return Alert.alert('Validation', 'Your cart is empty.');
+    if (!cleanFirstName) return showAlert('Validation', 'Please enter your first name.');
+    if (!cleanLastName) return showAlert('Validation', 'Please enter your last name.');
+    if (!isValidEmail(cleanEmail)) return showAlert('Validation', 'Please enter a valid email address.');
+    if (!isValidPhone(cleanPhone)) return showAlert('Validation', 'Please enter a valid phone number.');
+    if (!selectedAddressId) return showAlert('Validation', 'Please select a shipping address.');
+    if (!paymentMethod) return showAlert('Validation', 'Please select a payment method.');
+    if (cartItems.length === 0) return showAlert('Validation', 'Your cart is empty.');
 
     try {
       setLoading(true);
@@ -106,7 +107,7 @@ export default function CheckoutScreen({ navigation }) {
         }
         const productSnap = await getDoc(doc(firestore, 'products', item.productId));
         if (!productSnap.exists()) {
-          return Alert.alert('Error', `Product "${item.name}" is no longer available.`);
+          return showAlert('Error', `Product "${item.name}" is no longer available.`);
         }
         const currentPrice = productSnap.data().price;
         verifiedItems.push({ ...item, price: currentPrice });
@@ -154,12 +155,12 @@ export default function CheckoutScreen({ navigation }) {
         );
       }
 
-      Alert.alert('Order placed', 'Your order has been placed.', [
+      showAlert('Order placed', 'Your order has been placed.', [
         { text: 'OK', onPress: () => navigation.navigate('Orders') }
       ]);
     } catch (err) {
       logError(err, { screen: 'CheckoutScreen', metadata: { action: 'placeOrder' } });
-      Alert.alert('Error', 'Failed to place order');
+      showAlert('Error', 'Failed to place order');
     } finally { setLoading(false); }
   };
 

@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, ActivityIndicator } from "react-native";
 import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, firestore } from "../services/FirebaseConfig";
 import { normalizeEmail, isValidEmail } from "../utils/validation";
 import { logError } from "../services/errorLogger";
+import { showAlert } from "../utils/alert";
 
 // Login Screen Component
 // Note: App.js handles auth state changes and role-based routing automatically
@@ -18,19 +19,19 @@ export default function LoginScreen({ navigation }) {
     const cleanEmail = normalizeEmail(email);
 
     if (!cleanEmail) {
-      Alert.alert("Validation", "Please enter your email address.");
+      showAlert("Validation", "Please enter your email address.");
       return;
     }
     if (!isValidEmail(cleanEmail)) {
-      Alert.alert("Validation", "Please enter a valid email address.");
+      showAlert("Validation", "Please enter a valid email address.");
       return;
     }
     if (!password) {
-      Alert.alert("Validation", "Please enter your password.");
+      showAlert("Validation", "Please enter your password.");
       return;
     }
     if (password.length < 8) {
-      Alert.alert("Validation", "Password must be at least 8 characters.");
+      showAlert("Validation", "Password must be at least 8 characters.");
       return;
     }
 
@@ -43,14 +44,14 @@ export default function LoginScreen({ navigation }) {
       const userDoc = await getDoc(doc(firestore, "users", userCredential.user.uid));
       if (userDoc.exists() && userDoc.data().status === "disabled") {
         await signOut(auth);
-        Alert.alert("Account Disabled", "Your account has been disabled. Please contact support.");
+        showAlert("Account Disabled", "Your account has been disabled. Please contact support.");
         return;
       }
 
-      Alert.alert("Login Successful!");
+      showAlert("Login Successful!");
     } catch (error) {
       logError(error, { screen: "LoginScreen" });
-      Alert.alert("Login Error", error.message);
+      showAlert("Login Error", error.message);
     } finally {
       setLoading(false);
     }

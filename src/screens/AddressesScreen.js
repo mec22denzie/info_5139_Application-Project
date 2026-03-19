@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { collection, getDocs, addDoc, deleteDoc, doc, setDoc } from 'firebase/firestore';
 import { auth, firestore } from '../services/FirebaseConfig';
 import { sanitizeText, isValidZip } from '../utils/validation';
+import { showAlert } from "../utils/alert";
 
 // Addresses Screen Component
 export default function AddressesScreen({ navigation }) {
@@ -26,7 +27,7 @@ export default function AddressesScreen({ navigation }) {
         setAddresses(data);
       } catch (err) {
         console.error('Error fetching addresses', err);
-        Alert.alert('Error', 'Could not load addresses');
+        showAlert('Error', 'Could not load addresses');
       } finally { setLoading(false); }
     };
     fetchAddresses();
@@ -34,15 +35,15 @@ export default function AddressesScreen({ navigation }) {
 
   // Add a new address
   const addAddress = async () => {
-    if (!uid) return Alert.alert('Error', 'Not signed in');
+    if (!uid) return showAlert('Error', 'Not signed in');
     const cleanLine = sanitizeText(line);
     const cleanCity = sanitizeText(city);
     const cleanZip = String(zip).trim();
 
-    if (!cleanLine) return Alert.alert('Validation', 'Please enter an address line.');
-    if (cleanLine.length < 5 || cleanLine.length > 120) return Alert.alert('Validation', 'Address line must be 5-120 characters.');
-    if (!cleanCity) return Alert.alert('Validation', 'Please enter a city.');
-    if (cleanZip && !isValidZip(cleanZip)) return Alert.alert('Validation', 'Please enter a valid zip/postal code.');
+    if (!cleanLine) return showAlert('Validation', 'Please enter an address line.');
+    if (cleanLine.length < 5 || cleanLine.length > 120) return showAlert('Validation', 'Address line must be 5-120 characters.');
+    if (!cleanCity) return showAlert('Validation', 'Please enter a city.');
+    if (cleanZip && !isValidZip(cleanZip)) return showAlert('Validation', 'Please enter a valid zip/postal code.');
     try {
       const ref = await addDoc(collection(firestore, 'users', uid, 'addresses'), {
         line: cleanLine,
@@ -60,7 +61,7 @@ export default function AddressesScreen({ navigation }) {
       setLine(''); setCity(''); setZip('');
     } catch (err) {
       console.error('Error adding address', err);
-      Alert.alert('Error', 'Could not add address');
+      showAlert('Error', 'Could not add address');
     }
   };
 
@@ -71,13 +72,13 @@ export default function AddressesScreen({ navigation }) {
       setAddresses(prev => prev.filter(a => a.id !== id));
     } catch (err) {
       console.error('Error removing address', err);
-      Alert.alert('Error', 'Could not remove address');
+      showAlert('Error', 'Could not remove address');
     }
   };
 
   // Set an address as default
   const setDefault = async (id) => {
-    if (!uid) return Alert.alert('Error', 'Not signed in');
+    if (!uid) return showAlert('Error', 'Not signed in');
     try {
       const snap = await getDocs(collection(firestore, 'users', uid, 'addresses'));
       const ops = snap.docs.map(async (d) => {
@@ -86,10 +87,10 @@ export default function AddressesScreen({ navigation }) {
       });
       await Promise.all(ops);
       setAddresses(prev => prev.map(a => ({ ...a, isDefault: a.id === id })));
-      Alert.alert('Default set', 'This address is now the default for checkout');
+      showAlert('Default set', 'This address is now the default for checkout');
     } catch (err) {
       console.error('Error setting default address', err);
-      Alert.alert('Error', 'Could not set default address');
+      showAlert('Error', 'Could not set default address');
     }
   };
 

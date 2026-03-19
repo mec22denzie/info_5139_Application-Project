@@ -8,7 +8,6 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ActivityIndicator,
   ScrollView,
 } from "react-native";
@@ -16,6 +15,7 @@ import { auth } from "../services/FirebaseConfig";
 import { reportListing } from "../services/moderationService";
 import { logError } from "../services/errorLogger";
 import { sendToRole } from "../services/notificationService";
+import { showAlert } from "../utils/alert";
 
 // Available report reasons
 const REASONS = ["Inappropriate", "Misleading", "Duplicate", "Other"];
@@ -29,12 +29,12 @@ export default function ReportListingScreen({ route, navigation }) {
   // Submit the report to Firestore
   const handleSubmit = async () => {
     if (!reason) {
-      Alert.alert("Validation", "Please select a reason for reporting.");
+      showAlert("Validation", "Please select a reason for reporting.");
       return;
     }
 
     if (!auth.currentUser) {
-      Alert.alert("Error", "Please log in to report a listing.");
+      showAlert("Error", "Please log in to report a listing.");
       return;
     }
 
@@ -50,7 +50,7 @@ export default function ReportListingScreen({ route, navigation }) {
       );
 
       if (!result.success) {
-        Alert.alert("Already Reported", result.message);
+        showAlert("Already Reported", result.message);
         return;
       }
 
@@ -63,12 +63,12 @@ export default function ReportListingScreen({ route, navigation }) {
         { screen: "Moderation", productId }
       );
 
-      Alert.alert("Report Submitted", "Thank you. Our team will review this listing.", [
+      showAlert("Report Submitted", "Thank you. Our team will review this listing.", [
         { text: "OK", onPress: () => navigation.goBack() },
       ]);
     } catch (error) {
       logError(error, { screen: "ReportListingScreen", metadata: { productId } });
-      Alert.alert("Error", "Failed to submit report. Please try again.");
+      showAlert("Error", "Failed to submit report. Please try again.");
     } finally {
       setLoading(false);
     }
