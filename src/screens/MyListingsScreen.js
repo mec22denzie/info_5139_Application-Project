@@ -4,6 +4,7 @@ import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, ActivityIndi
 // Firebase imports
 import { collection, query, where, getDocs, deleteDoc, doc, getDoc } from "firebase/firestore";
 import { auth, firestore } from "../services/FirebaseConfig";
+import { logError } from "../services/errorLogger";
 import { showAlert } from "../utils/alert";
 
 // My Listings Screen Component - Shows items posted by the current donor
@@ -25,7 +26,7 @@ export default function MyListingsScreen({ navigation }) {
       const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
       setListings(data);
     } catch (err) {
-      console.error("Error fetching listings:", err);
+      logError(err, { screen: "MyListingsScreen", metadata: { action: "fetchListings" } });
       showAlert("Error", "Failed to load your listings.");
     } finally {
       setLoading(false);
@@ -58,7 +59,7 @@ export default function MyListingsScreen({ navigation }) {
             setListings((prev) => prev.filter((item) => item.id !== id));
             showAlert("Deleted", "Item removed successfully.");
           } catch (err) {
-            console.error("Error deleting listing:", err);
+            logError(err, { screen: "MyListingsScreen", metadata: { action: "deleteListing" } });
             showAlert("Error", "Failed to delete item.");
           }
         },

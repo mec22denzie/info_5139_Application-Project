@@ -12,6 +12,7 @@ import {
 // Firebase imports
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, firestore } from '../services/FirebaseConfig';
+import { logError } from '../services/errorLogger';
 import { showAlert } from "../utils/alert";
 
 export default function OrdersScreen({ navigation }) {
@@ -37,7 +38,7 @@ export default function OrdersScreen({ navigation }) {
         // Sort by createdAt descending
         setOrders(data.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '')));
       } catch (err) {
-        console.error('Error fetching orders', err);
+        logError(err, { screen: 'OrdersScreen', metadata: { action: 'fetchOrders' } });
       } finally {
         setLoading(false);
       }

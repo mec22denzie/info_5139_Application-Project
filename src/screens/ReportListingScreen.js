@@ -15,6 +15,7 @@ import { auth } from "../services/FirebaseConfig";
 import { reportListing } from "../services/moderationService";
 import { logError } from "../services/errorLogger";
 import { sendToRole } from "../services/notificationService";
+import { sanitizeText } from "../utils/validation";
 import { showAlert } from "../utils/alert";
 
 // Available report reasons
@@ -46,7 +47,7 @@ export default function ReportListingScreen({ route, navigation }) {
         auth.currentUser.uid,
         auth.currentUser.email,
         reason,
-        description.trim()
+        sanitizeText(description)
       );
 
       if (!result.success) {

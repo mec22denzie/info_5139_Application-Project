@@ -3,9 +3,10 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 import { auth } from '../services/FirebaseConfig';
 import { signOut } from 'firebase/auth';
+import { logError } from '../services/errorLogger';
 
 // Import Screens
-import LoginScreen from "./loginScreen";
+import LoginScreen from "./LoginScreen";
 
 // ProfileScreen component displaying user info and menu options
 export default function ProfileScreen({ navigation }) {
@@ -17,7 +18,7 @@ export default function ProfileScreen({ navigation }) {
 
  // Logout function: signs out the user (App.js handles navigation via auth state)
   const handleLogout = () => {
-    signOut(auth).catch((error) => console.error(error));
+    signOut(auth).catch((error) => logError(error, { screen: 'ProfileScreen', metadata: { action: 'logout' } }));
   };
 
    // Menu items displayed in the profile screen

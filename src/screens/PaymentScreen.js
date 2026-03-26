@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, TextInput, StyleSheet } from 'react-nativ
 import { auth, firestore } from '../services/FirebaseConfig';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { isValidCardNumber, isValidExpiry } from '../utils/validation';
+import { logError } from '../services/errorLogger';
 import { showAlert } from "../utils/alert";
 
 // Payment Screen Component
@@ -26,7 +27,7 @@ export default function PaymentScreen({ navigation }) {
           //setSelected(data.selectedPaymentMethod || null);
         }
       } catch (err) {
-        console.error('Error loading payment method', err);
+        logError(err, { screen: 'PaymentScreen', metadata: { action: 'loadPaymentMethod' } });
       }
     };
     load();
@@ -59,7 +60,7 @@ export default function PaymentScreen({ navigation }) {
       showAlert('Saved', 'Payment method saved (dummy, card not stored)');
       navigation.goBack();
     } catch (err) {
-      console.error('Error saving payment method', err);
+      logError(err, { screen: 'PaymentScreen', metadata: { action: 'savePaymentMethod' } });
       showAlert('Error', 'Could not save payment method');
     }
   };

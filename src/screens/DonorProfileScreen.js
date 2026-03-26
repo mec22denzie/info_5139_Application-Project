@@ -8,6 +8,7 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { sanitizeText, isValidName, isValidPhone } from "../utils/validation";
+import { logError } from "../services/errorLogger";
 import { showAlert } from "../utils/alert";
 
 // Donor Profile Screen Component - Allows donors to manage their contributor profile
@@ -43,7 +44,7 @@ export default function DonorProfileScreen({ navigation }) {
         const snap = await getDocs(q);
         setTotalListings(snap.size);
       } catch (err) {
-        console.error("Error loading profile:", err);
+        logError(err, { screen: "DonorProfileScreen", metadata: { action: "loadProfile" } });
       } finally {
         setLoading(false);
       }
@@ -58,8 +59,8 @@ export default function DonorProfileScreen({ navigation }) {
   const handleSave = async () => {
     const cleanFirstName = sanitizeText(firstName);
     const cleanLastName = sanitizeText(lastName);
-    const cleanBio = bio.trim();
-    const cleanPhone = phone.trim();
+    const cleanBio = sanitizeText(bio);
+    const cleanPhone = String(phone).trim();
 
     if (!cleanFirstName || !cleanLastName) {
       return showAlert("Validation", "First and last name are required.");
@@ -86,7 +87,7 @@ export default function DonorProfileScreen({ navigation }) {
       showAlert("Saved", "Profile updated successfully.");
       setEditing(false);
     } catch (err) {
-      console.error("Error saving profile:", err);
+      logError(err, { screen: "DonorProfileScreen", metadata: { action: "saveProfile" } });
       showAlert("Error", "Failed to save profile.");
     } finally {
       setSaving(false);
@@ -95,7 +96,7 @@ export default function DonorProfileScreen({ navigation }) {
 
   // Logout function
   const handleLogout = () => {
-    signOut(auth).catch((error) => console.error(error));
+    signOut(auth).catch((error) => logError(error, { screen: "DonorProfileScreen", metadata: { action: "logout" } }));
   };
 
   if (loading) {

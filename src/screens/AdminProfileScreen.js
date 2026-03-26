@@ -6,6 +6,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-nati
 import { Ionicons } from "@expo/vector-icons";
 import { auth } from "../services/FirebaseConfig";
 import { signOut } from "firebase/auth";
+import { logError } from "../services/errorLogger";
 
 export default function AdminProfileScreen({ navigation }) {
   const [activeItem, setActiveItem] = useState(null);
@@ -16,7 +17,7 @@ export default function AdminProfileScreen({ navigation }) {
 
   // Logout function
   const handleLogout = () => {
-    signOut(auth).catch((error) => console.error(error));
+    signOut(auth).catch((error) => logError(error, { screen: "AdminProfileScreen", metadata: { action: "logout" } }));
   };
 
   // Menu items for admin profile

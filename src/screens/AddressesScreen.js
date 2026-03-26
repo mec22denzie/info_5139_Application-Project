@@ -3,6 +3,7 @@ import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, Activity
 import { collection, getDocs, addDoc, deleteDoc, doc, setDoc } from 'firebase/firestore';
 import { auth, firestore } from '../services/FirebaseConfig';
 import { sanitizeText, isValidZip } from '../utils/validation';
+import { logError } from '../services/errorLogger';
 import { showAlert } from "../utils/alert";
 
 // Addresses Screen Component
@@ -26,7 +27,7 @@ export default function AddressesScreen({ navigation }) {
         const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         setAddresses(data);
       } catch (err) {
-        console.error('Error fetching addresses', err);
+        logError(err, { screen: 'AddressesScreen', metadata: { action: 'fetchAddresses' } });
         showAlert('Error', 'Could not load addresses');
       } finally { setLoading(false); }
     };
@@ -60,7 +61,7 @@ export default function AddressesScreen({ navigation }) {
       setAddresses(prev => [...prev, created]);
       setLine(''); setCity(''); setZip('');
     } catch (err) {
-      console.error('Error adding address', err);
+      logError(err, { screen: 'AddressesScreen', metadata: { action: 'addAddress' } });
       showAlert('Error', 'Could not add address');
     }
   };
@@ -71,7 +72,7 @@ export default function AddressesScreen({ navigation }) {
       await deleteDoc(doc(firestore, 'users', uid, 'addresses', id));
       setAddresses(prev => prev.filter(a => a.id !== id));
     } catch (err) {
-      console.error('Error removing address', err);
+      logError(err, { screen: 'AddressesScreen', metadata: { action: 'removeAddress' } });
       showAlert('Error', 'Could not remove address');
     }
   };
@@ -89,7 +90,7 @@ export default function AddressesScreen({ navigation }) {
       setAddresses(prev => prev.map(a => ({ ...a, isDefault: a.id === id })));
       showAlert('Default set', 'This address is now the default for checkout');
     } catch (err) {
-      console.error('Error setting default address', err);
+      logError(err, { screen: 'AddressesScreen', metadata: { action: 'setDefault' } });
       showAlert('Error', 'Could not set default address');
     }
   };

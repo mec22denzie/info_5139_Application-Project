@@ -8,6 +8,7 @@ import { auth, firestore, storage } from "../services/FirebaseConfig";
 // Image picker import
 import * as ImagePicker from "expo-image-picker";
 import { sanitizeText, isValidPrice, toPriceNumber } from "../utils/validation";
+import { logError } from "../services/errorLogger";
 import { showAlert } from "../utils/alert";
 
 // Available categories for items
@@ -117,7 +118,7 @@ export default function EditItemScreen({ route, navigation }) {
         { text: "OK", onPress: () => navigation.goBack() },
       ]);
     } catch (err) {
-      console.error("Error updating item:", err);
+      logError(err, { screen: "EditItemScreen", metadata: { action: "updateItem", itemId: item.id } });
       showAlert("Error", "Failed to update item. Please try again.");
     } finally {
       setLoading(false);

@@ -16,7 +16,7 @@ import { auth, firestore } from "./src/services/FirebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 // Import Screens
-import LoginScreen from "./src/screens/loginScreen";
+import LoginScreen from "./src/screens/LoginScreen";
 import SignUpScreen from "./src/screens/SignUpScreen";
 import ProductDetailScreen from "./src/screens/ProductDetailScreen";
 import AddressesScreen from "./src/screens/AddressesScreen";

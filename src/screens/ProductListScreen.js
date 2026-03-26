@@ -2,9 +2,10 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, FlatList, Image, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
 // Import Firestore functions for CRUD operations
-import { collection, getDocs, addDoc, deleteDoc, doc, query, where } from "firebase/firestore";
+import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
 import { firestore } from "../services/FirebaseConfig";
 import { logError } from "../services/errorLogger";
+import { seedIfEmpty } from "../utils/seedProducts";
 
 import SearchBar from "../components/SearchBar";
 
@@ -42,203 +43,36 @@ export default function ProductListScreen({ navigation }) {
   "Colored_Shoes": require("../../assets/Shoes/Colored_Shoes.jpg"),
 };
 
-  // Adding Sample products to Firestone (only used when DB is empty)
-  const addSampleProducts = async () => {
-    if (__DEV__) console.log("Starting to add sample products...");
-    try {
-      const sampleProducts = [
-        // Apparel products
-        {
-          name: "Blue Denim Jacket",
-          price: 49.99,
-          category: "Apparel",
-          description: "Classic men's denim jacket for all seasons.",
-          image: "B_Jacket", 
-        },
-        {
-          name: "Red Hoodie",
-          price: 29.99,
-          category: "Apparel",
-          description: "Comfortable cotton hoodie for casual wear.",
-          image: "R_Hoodie",
-        },
-        {
-          name: "White Simple Dress",
-          price: 59.99,
-          category: "Apparel",
-          description: "Stylish and comfortable dress for everyday use.",
-          image: "Dress1",
-        },
-        //Electronics products
-        {
-          name: "Apple MacBook Pro",
-          price: 1999.99,
-          category: "Electronics",
-          description: "Powerful Apple laptop with M1 chip for professionals.",
-          image: "MacPro",
-        },
-        {
-          name: "Apple EarPods",
-          price: 29.99,
-          category: "Electronics",
-          description: "High-quality wired EarPods with built-in microphone.",
-          image: "EarPods",
-        },
-        {
-          name: "Sony Camera",
-          price: 899.99,
-          category: "Electronics",
-          description: "Compact Sony mirrorless camera for photography enthusiasts.",
-          image: "Camera",
-        },
-        {
-          name: "Wireless Headphones",
-          price: 199.99,
-          category: "Electronics",
-          description: "Noise-canceling over-ear wireless headphones for immersive sound.",
-          image: "Headphone",
-        },
-        // Shoes products
-        {
-          name: "SkyRunner 3000",
-          price: 129.99,
-          category: "Footwear",
-          description: "Sleek, lightweight sneakers with air cushioning for all-day comfort.",
-          image: "Air_Shoes",
-        },
-        {
-          name: "TrailBlazer WP Boots",
-          price: 149.99,
-          category: "Footwear",
-          description: "Waterproof, rugged boots perfect for outdoor adventures.",
-          image: "WP_Boots",
-        },
-        {
-          name: "FlexGrip Classics",
-          price: 59.99,
-          category: "Footwear",
-          description: "Durable rubber shoes designed for everyday wear and comfort.",
-          image: "Rubber_Shoes",
-        },
-        {
-          name: "VibrantStep Sneakers",
-          price: 69.99,
-          category: "Footwear",
-          description: "Eye-catching colorful shoes that combine style and comfort.",
-          image: "Colored_Shoes",
-        },
-      ];
-
-      // Loop through sample product list and upload to Firestore
-      for (let p of sampleProducts) {
-        // Validating product data before adding
-        if (!p.name || !p.price || !p.category || !p.description) {
-          console.error("Invalid product data:", p);
-          continue;
-        }
-        
-        try {
-          const docRef = await addDoc(collection(firestore, "products"), {
-            name: p.name || "",
-            price: p.price || 0,
-            category: p.category || "Uncategorized",
-            description: p.description || "",
-            image: p.image || "https://via.placeholder.com/100",
-          });
-          if (__DEV__) console.log("Added product with ID:", docRef.id);
-        } catch (err) {
-          logError(err, { screen: "ProductListScreen", metadata: { action: "addSampleProduct", productName: p.name } });
-        }
-      }
-      alert("Sample products added successfully!");
-    } catch (e) {
-      logError(e, { screen: "ProductListScreen", metadata: { action: "addSampleProducts" } });
-    }
-  };
-
-  // Initialize products if none exist
+  // Seed sample products if the collection is empty
   useEffect(() => {
-    const checkAndAddProducts = async () => {
-      try {
-        if (__DEV__) console.log("Checking for existing products...");
-        // Check if products exist
-        const snapshot = await getDocs(collection(firestore, "products"));
-        if (__DEV__) console.log("Initial check - Number of products:", snapshot.size);
-
-        if (snapshot.empty) {
-          if (__DEV__) console.log("No products found, adding sample products...");
-          // Only add sample products if none exist
-          await addSampleProducts();
-          if (__DEV__) console.log("Sample products added successfully");
-        } else {
-          if (__DEV__) console.log("Products already exist, skipping sample data");
-        }
-      } catch (err) {
-        logError(err, { screen: "ProductListScreen", metadata: { action: "checkAndAddProducts" } });
-      }
-    };
-    checkAndAddProducts();
+    seedIfEmpty(firestore);
   }, []);
 
   // Fetch products from firestore
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        if (__DEV__) console.log("Starting to fetch products...");
         setLoading(true);
 
-        // Check if Firestore is available
         if (!firestore) {
-          if (__DEV__) console.error("Firestore is not initialized!");
           setError("Database connection error");
           return;
         }
 
-        if (__DEV__) console.log("Firestore status:", !!firestore ? "initialized" : "not initialized");
-
-        // Reference the "products" collection in Firestore
         const productsRef = collection(firestore, "products");
-        if (__DEV__) console.log("Products collection reference created");
-
-        // Fetch all documents inside the "products" collection
         const snapshot = await getDocs(productsRef);
-        if (__DEV__) console.log("Snapshot received, number of products:", snapshot.size);
-        
-        // If no products exist in Firestore
-        if (snapshot.empty) {
-          if (__DEV__) console.log("No products found in Firestore, attempting to add sample products...");
 
-          // Create sample products if database is empty
-          await addSampleProducts();
-
-          // Fetch products again after adding samples
-          const newSnapshot = await getDocs(productsRef);
-
-          // Convert each document into a readable JS object
-          const data = newSnapshot.docs.map(doc => {
-            const productData = { id: doc.id, ...doc.data() };
-            if (__DEV__) console.log("Product found:", productData.name);
-            return productData;
-          });
-          setProducts(data); // Update state with new products
-        } else {
-          // If products already exist in Firestore
-          const data = snapshot.docs.map(doc => {
-            const productData = { id: doc.id, ...doc.data() };
-            if (__DEV__) console.log("Product found:", productData.name);
-            return productData;
-          });
-          if (__DEV__) console.log("Total products processed:", data.length);
-          setProducts(data); // Update state with existing products
-        }
-        setError(null); // Clear previous errors (if any)
-        // Log for error debugging
+        const data = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setProducts(data);
+        setError(null);
       } catch (err) {
         logError(err, { screen: "ProductListScreen", metadata: { action: "fetchProducts" } });
         setError("Failed to load products: " + err.message);
       } finally {
         setLoading(false);
-        if (__DEV__) console.log("Fetch products complete, loading set to false");
       }
     };
     fetchProducts();
@@ -247,22 +81,11 @@ export default function ProductListScreen({ navigation }) {
   // Filter products by Category and search input, and hide items without images
   const filteredProducts = products.filter((p) => {
     try {
-      // Check if product and its required properties exist
-      if (!p || !p.name || !p.description) {
-        if (__DEV__) console.log("Invalid product data:", p);
-        return false;
-      }
+      if (!p || !p.name || !p.description) return false;
+      if (p.status === "removed") return false;
 
-      // Hide products removed by admin
-      if (p.status === "removed") {
-        return false;
-      }
-
-      // Skip any product that does not have a valid image source
       const hasImage = !!getImageSource(p);
-      if (!hasImage) {
-        return false;
-      }
+      if (!hasImage) return false;
 
       const matchesCategory = category === "All" || p.category === category;
       const searchLower = search.toLowerCase();
@@ -272,7 +95,7 @@ export default function ProductListScreen({ navigation }) {
 
       return matchesCategory && matchesSearch;
     } catch (err) {
-      if (__DEV__) console.error("Error filtering product:", err, p);
+      logError(err, { screen: "ProductListScreen", metadata: { action: "filterProduct" } });
       return false;
     }
   });
@@ -293,7 +116,7 @@ const deleteProduct = async (productId) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Shop Now</Text>
-      
+
       {/* Category Filter */}
       <View style={styles.categories}>
   {[
@@ -443,7 +266,7 @@ const styles = StyleSheet.create({
     padding: 10,
     alignItems: "center",
     justifyContent: "center",
-    
+
     // Shadow for iOS
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -478,21 +301,21 @@ const styles = StyleSheet.create({
     color: "#1E6F60",
   },
   searchContainer: {
-    flexDirection: 'row',        
-    alignItems: 'center',        
-    borderWidth: 1,              
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
     borderColor: '#1E6F60',
     borderRadius: 8,
     paddingHorizontal: 10,
     backgroundColor: '#fff',
   },
   searchInput: {
-    flex: 1,                    
+    flex: 1,
     height: 40,
     fontSize: 16,
   },
   iconButton: {
-    padding: 5,                  
+    padding: 5,
   },
   searchIcon: {
     fontSize: 20,
