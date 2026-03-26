@@ -14,6 +14,8 @@ export default function ProductListScreen({ navigation }) {
   const [products, setProducts] = useState([]);
   const [category, setCategory] = useState("All");
   const [search, setSearch] = useState("");
+  const [priceRange, setPriceRange] = useState("All");
+  const [selectedCondition, setSelectedCondition] = useState("All");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -93,7 +95,24 @@ export default function ProductListScreen({ navigation }) {
         p.name.toLowerCase().includes(searchLower) ||
         p.description.toLowerCase().includes(searchLower);
 
-      return matchesCategory && matchesSearch;
+      // Price range filter
+      let matchesPrice = true;
+      if (priceRange === "Free") {
+        matchesPrice = p.price === 0 || p.isDonation === true;
+      } else if (priceRange === "Under $25") {
+        matchesPrice = p.price < 25;
+      } else if (priceRange === "Under $50") {
+        matchesPrice = p.price < 50;
+      } else if (priceRange === "Under $100") {
+        matchesPrice = p.price < 100;
+      } else if (priceRange === "$100+") {
+        matchesPrice = p.price >= 100;
+      }
+
+      // Condition filter
+      const matchesCondition = selectedCondition === "All" || p.condition === selectedCondition;
+
+      return matchesCategory && matchesSearch && matchesPrice && matchesCondition;
     } catch (err) {
       logError(err, { screen: "ProductListScreen", metadata: { action: "filterProduct" } });
       return false;
@@ -147,6 +166,34 @@ const deleteProduct = async (productId) => {
     <View style={styles}>
       <SearchBar searchQuery={search} onChange={setSearch} />
     </View>
+
+      {/* Price Range Filter */}
+      <Text style={styles.filterLabel}>Price</Text>
+      <View style={styles.filterRow}>
+        {["All", "Free", "Under $25", "Under $50", "Under $100", "$100+"].map((range) => (
+          <TouchableOpacity
+            key={range}
+            style={[styles.filterBtn, priceRange === range && styles.filterBtnActive]}
+            onPress={() => setPriceRange(range)}
+          >
+            <Text style={[styles.filterBtnText, priceRange === range && styles.filterBtnTextActive]}>{range}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Condition Filter */}
+      <Text style={styles.filterLabel}>Condition</Text>
+      <View style={styles.filterRow}>
+        {["All", "New", "Like New", "Good", "Fair"].map((cond) => (
+          <TouchableOpacity
+            key={cond}
+            style={[styles.filterBtn, selectedCondition === cond && styles.filterBtnActive]}
+            onPress={() => setSelectedCondition(cond)}
+          >
+            <Text style={[styles.filterBtnText, selectedCondition === cond && styles.filterBtnTextActive]}>{cond}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
       {/* Loading and Error States */}
       {loading ? (
@@ -319,5 +366,52 @@ const styles = StyleSheet.create({
   },
   searchIcon: {
     fontSize: 20,
+  },
+  filterLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#555",
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  filterRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: 4,
+  },
+  filterBtn: {
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    marginRight: 6,
+    marginBottom: 6,
+    backgroundColor: "#fff",
+  },
+  filterBtnActive: {
+    borderColor: "#1E6F60",
+    backgroundColor: "#E8F5E9",
+  },
+  filterBtnText: {
+    fontSize: 12,
+    color: "#666",
+  },
+  filterBtnTextActive: {
+    color: "#1E6F60",
+    fontWeight: "700",
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  errorText: {
+    color: "red",
+    fontSize: 16,
+  },
+  noProducts: {
+    fontSize: 16,
+    color: "#999",
   },
 });

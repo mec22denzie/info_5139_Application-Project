@@ -14,6 +14,7 @@ import { showAlert } from "../utils/alert";
 
 // Available categories for items
 const CATEGORIES = ["Apparel", "Electronics", "Footwear", "Books", "Furniture", "Other"];
+const CONDITIONS = ["New", "Like New", "Good", "Fair"];
 
 // Post Item Screen Component - Allows donors to post second-hand items
 export default function PostItemScreen({ navigation }) {
@@ -22,6 +23,7 @@ export default function PostItemScreen({ navigation }) {
   const [category, setCategory] = useState("");
   const [price, setPrice] = useState("");
   const [isDonation, setIsDonation] = useState(false);
+  const [condition, setCondition] = useState("New");
   const [imageUri, setImageUri] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -123,6 +125,7 @@ export default function PostItemScreen({ navigation }) {
         name: cleanName,
         description: cleanDescription,
         category,
+        condition,
         price: isDonation ? 0 : toPriceNumber(cleanPrice),
         isDonation,
         imageUri: uploadedImageUrl,
@@ -143,7 +146,7 @@ export default function PostItemScreen({ navigation }) {
       showAlert("Success", "Your item has been posted!", [
         { text: "OK", onPress: () => {
           // Reset form
-          setName(""); setDescription(""); setCategory(""); setPrice(""); setIsDonation(false); setImageUri(null);
+          setName(""); setDescription(""); setCategory(""); setPrice(""); setIsDonation(false); setCondition("New"); setImageUri(null);
           navigation.navigate("MyListings");
         }},
       ]);
@@ -205,6 +208,20 @@ export default function PostItemScreen({ navigation }) {
             onPress={() => setCategory(cat)}
           >
             <Text style={[styles.categoryText, category === cat && styles.categoryTextActive]}>{cat}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Condition selection */}
+      <Text style={styles.label}>Condition *</Text>
+      <View style={styles.categoryContainer}>
+        {CONDITIONS.map((cond) => (
+          <TouchableOpacity
+            key={cond}
+            style={[styles.categoryBtn, condition === cond && styles.categoryBtnActive]}
+            onPress={() => setCondition(cond)}
+          >
+            <Text style={[styles.categoryText, condition === cond && styles.categoryTextActive]}>{cond}</Text>
           </TouchableOpacity>
         ))}
       </View>

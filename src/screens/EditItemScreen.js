@@ -13,6 +13,7 @@ import { showAlert } from "../utils/alert";
 
 // Available categories for items
 const CATEGORIES = ["Apparel", "Electronics", "Footwear", "Books", "Furniture", "Other"];
+const CONDITIONS = ["New", "Like New", "Good", "Fair"];
 
 // Edit Item Screen Component - Allows donors to edit their posted items
 export default function EditItemScreen({ route, navigation }) {
@@ -23,6 +24,7 @@ export default function EditItemScreen({ route, navigation }) {
   const [category, setCategory] = useState(item.category || "");
   const [price, setPrice] = useState(item.price ? String(item.price) : "");
   const [isDonation, setIsDonation] = useState(item.isDonation || false);
+  const [condition, setCondition] = useState(item.condition || "New");
   const [imageUri, setImageUri] = useState(item.imageUri || null);
   const [loading, setLoading] = useState(false);
 
@@ -108,6 +110,7 @@ export default function EditItemScreen({ route, navigation }) {
         name: cleanName,
         description: cleanDescription,
         category,
+        condition,
         price: isDonation ? 0 : toPriceNumber(cleanPrice),
         isDonation,
         imageUri: finalImageUri || null,
@@ -169,6 +172,20 @@ export default function EditItemScreen({ route, navigation }) {
             onPress={() => setCategory(cat)}
           >
             <Text style={[styles.categoryText, category === cat && styles.categoryTextActive]}>{cat}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Condition selection */}
+      <Text style={styles.label}>Condition *</Text>
+      <View style={styles.categoryContainer}>
+        {CONDITIONS.map((cond) => (
+          <TouchableOpacity
+            key={cond}
+            style={[styles.categoryBtn, condition === cond && styles.categoryBtnActive]}
+            onPress={() => setCondition(cond)}
+          >
+            <Text style={[styles.categoryText, condition === cond && styles.categoryTextActive]}>{cond}</Text>
           </TouchableOpacity>
         ))}
       </View>
