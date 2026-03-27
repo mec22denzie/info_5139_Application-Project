@@ -103,7 +103,7 @@ export default function App() {
             <Stack.Screen name="ModerationDetail" component={ModerationDetailScreen} options={{ title: "Report Details" }} />
             <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ title: "Notifications" }} />
             <Stack.Screen name="About" component={AboutScreen} />
-            <Stack.Screen name="HelpSupport" component={HelpScreen} />
+            <Stack.Screen name="HelpSupport" component={HelpScreen} options={{ title: "Help & Support" }} />
           </>
         ) : userRole === "Donor" ? (
           <>
@@ -112,7 +112,7 @@ export default function App() {
             <Stack.Screen name="EditItem" component={EditItemScreen} options={{ title: "Edit Item" }} />
             <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ title: "Notifications" }} />
             <Stack.Screen name="About" component={AboutScreen} />
-            <Stack.Screen name="HelpSupport" component={HelpScreen} />
+            <Stack.Screen name="HelpSupport" component={HelpScreen} options={{ title: "Help & Support" }} />
           </>
         ) : (
           <>
@@ -126,7 +126,7 @@ export default function App() {
             <Stack.Screen name="Checkout" component={CheckoutScreen} />
             <Stack.Screen name="Orders" component={OrdersScreen} />
             <Stack.Screen name="About" component={AboutScreen} />
-            <Stack.Screen name="HelpSupport" component={HelpScreen} />
+            <Stack.Screen name="HelpSupport" component={HelpScreen} options={{ title: "Help & Support" }} />
             <Stack.Screen name="Wishlist" component={WishlistScreen} />
           </>
         )}

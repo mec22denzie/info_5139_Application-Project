@@ -1,20 +1,39 @@
-import React, { useState } from 'react'; 
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { auth } from '../services/FirebaseConfig';
+import { auth, firestore } from '../services/FirebaseConfig';
+import { doc, getDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { logError } from '../services/errorLogger';
-
-// Import Screens
-import LoginScreen from "./LoginScreen";
 
 // ProfileScreen component displaying user info and menu options
 export default function ProfileScreen({ navigation }) {
   const [activeItem, setActiveItem] = useState(null);
+  const [displayName, setDisplayName] = useState("User");
 
- // Get current authenticated user
+  // Get current authenticated user
   const user = auth.currentUser;
-  const displayName = user?.displayName || user?.email || "User";
+
+  // Fetch first name from Firestore user doc
+  useEffect(() => {
+    const loadName = async () => {
+      if (!user) return;
+      try {
+        const userDoc = await getDoc(doc(firestore, "users", user.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          const name = [data.firstName, data.lastName].filter(Boolean).join(" ");
+          setDisplayName(name || user.email || "User");
+        } else {
+          setDisplayName(user.email || "User");
+        }
+      } catch (err) {
+        logError(err, { screen: "ProfileScreen", metadata: { action: "loadName" } });
+        setDisplayName(user.email || "User");
+      }
+    };
+    loadName();
+  }, [user]);
 
  // Logout function: signs out the user (App.js handles navigation via auth state)
   const handleLogout = () => {

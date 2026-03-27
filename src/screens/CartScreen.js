@@ -139,7 +139,13 @@ export default function CartScreen({ navigation }) {
           contentContainerStyle={{ paddingBottom: 100 }}
           renderItem={({ item, index }) => (
             <View style={styles.item}>
-              <Image source={{ uri: item.image && item.image.startsWith("https://") ? item.image : "https://via.placeholder.com/80" }} style={styles.image} />
+              {item.image && item.image.startsWith("https://") ? (
+                <Image source={{ uri: item.image }} style={styles.image} />
+              ) : (
+                <View style={[styles.image, { backgroundColor: "#e8e8e8", justifyContent: "center", alignItems: "center" }]}>
+                  <Text style={{ color: "#999", fontSize: 12 }}>No Image</Text>
+                </View>
+              )}
               <View style={styles.info}>
                 <Text style={styles.name}>{item.name}</Text>
                 <Text style={styles.price}>${item.price} x {item.quantity}</Text>

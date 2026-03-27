@@ -34,24 +34,34 @@ const writeLog = async (level, message, context = {}) => {
 
 // Log an error — use in catch blocks throughout the app
 export const logError = (error, context = {}) => {
-  // Always keep console output for local dev
-  console.error(`[ERROR][${context.screen || "Unknown"}]`, error);
-
-  writeLog("error", error.message || String(error), {
-    ...context,
-    code: error.code || null,
-    stackTrace: __DEV__ ? error.stack : null,
-  });
+  try {
+    if (__DEV__) console.error(`[ERROR][${context.screen || "Unknown"}]`, error);
+    writeLog("error", error.message || String(error), {
+      ...context,
+      code: error.code || null,
+      stackTrace: __DEV__ ? error.stack : null,
+    });
+  } catch (_) {
+    // Logger must never crash the app
+  }
 };
 
 // Log a warning — use for non-critical issues
 export const logWarn = (message, context = {}) => {
-  console.warn(`[WARN][${context.screen || "Unknown"}]`, message);
-  writeLog("warn", message, context);
+  try {
+    if (__DEV__) console.warn(`[WARN][${context.screen || "Unknown"}]`, message);
+    writeLog("warn", message, context);
+  } catch (_) {
+    // Logger must never crash the app
+  }
 };
 
 // Log an info event — use for significant actions (e.g. admin actions, sign-outs)
 export const logInfo = (message, context = {}) => {
-  console.log(`[INFO][${context.screen || "Unknown"}]`, message);
-  writeLog("info", message, context);
+  try {
+    if (__DEV__) console.log(`[INFO][${context.screen || "Unknown"}]`, message);
+    writeLog("info", message, context);
+  } catch (_) {
+    // Logger must never crash the app
+  }
 };

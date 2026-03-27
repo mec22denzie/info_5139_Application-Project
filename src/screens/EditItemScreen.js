@@ -5,8 +5,9 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image,
 import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { auth, firestore, storage } from "../services/FirebaseConfig";
-// Image picker import
+// Image picker and manipulator imports
 import * as ImagePicker from "expo-image-picker";
+import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 import { sanitizeText, isValidPrice, toPriceNumber } from "../utils/validation";
 import { logError } from "../services/errorLogger";
 import { showAlert } from "../utils/alert";
@@ -45,6 +46,52 @@ export default function EditItemScreen({ route, navigation }) {
 
     if (!result.canceled && result.assets && result.assets.length > 0) {
       setImageUri(result.assets[0].uri);
+    }
+  };
+
+  // Image editing: rotate 90 degrees clockwise
+  const handleRotate = async () => {
+    if (!imageUri) return;
+    try {
+      const result = await manipulateAsync(imageUri, [{ rotate: 90 }], { format: SaveFormat.JPEG });
+      setImageUri(result.uri);
+    } catch (err) {
+      logError(err, { screen: "EditItemScreen", metadata: { action: "rotateImage" } });
+      showAlert("Error", "Failed to rotate image.");
+    }
+  };
+
+  // Image editing: resize to 800px width
+  const handleResize = async () => {
+    if (!imageUri) return;
+    try {
+      const result = await manipulateAsync(imageUri, [{ resize: { width: 800 } }], { format: SaveFormat.JPEG });
+      setImageUri(result.uri);
+    } catch (err) {
+      logError(err, { screen: "EditItemScreen", metadata: { action: "resizeImage" } });
+      showAlert("Error", "Failed to resize image.");
+    }
+  };
+
+  // Image editing: crop to centered square
+  const handleCrop = async () => {
+    if (!imageUri) return;
+    try {
+      const { width, height } = await new Promise((resolve, reject) => {
+        Image.getSize(imageUri, (w, h) => resolve({ width: w, height: h }), reject);
+      });
+      const size = Math.min(width, height);
+      const originX = (width - size) / 2;
+      const originY = (height - size) / 2;
+      const result = await manipulateAsync(
+        imageUri,
+        [{ crop: { originX, originY, width: size, height: size } }],
+        { format: SaveFormat.JPEG }
+      );
+      setImageUri(result.uri);
+    } catch (err) {
+      logError(err, { screen: "EditItemScreen", metadata: { action: "cropImage" } });
+      showAlert("Error", "Failed to crop image.");
     }
   };
 
@@ -122,7 +169,12 @@ export default function EditItemScreen({ route, navigation }) {
       ]);
     } catch (err) {
       logError(err, { screen: "EditItemScreen", metadata: { action: "updateItem", itemId: item.id } });
-      showAlert("Error", "Failed to update item. Please try again.");
+      const errMsg = err.message || "";
+      if (errMsg.toLowerCase().includes("quota") || errMsg.includes("storage/quota-exceeded")) {
+        showAlert("Error", "Image upload failed — storage limit reached. Please try again later.");
+      } else {
+        showAlert("Error", "Failed to update item. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -145,6 +197,19 @@ export default function EditItemScreen({ route, navigation }) {
         <TouchableOpacity style={styles.imageBtn} onPress={pickImage}>
           <Text style={styles.imageBtnText}>Change Image</Text>
         </TouchableOpacity>
+        {imageUri && (
+          <View style={styles.editRow}>
+            <TouchableOpacity style={styles.editBtn} onPress={handleCrop}>
+              <Text style={styles.editBtnText}>Crop</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.editBtn} onPress={handleRotate}>
+              <Text style={styles.editBtnText}>Rotate</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.editBtn} onPress={handleResize}>
+              <Text style={styles.editBtnText}>Resize</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
       {/* Item name */}
@@ -257,6 +322,9 @@ const styles = StyleSheet.create({
   placeholderText: { color: "#999", fontSize: 15 },
   imageBtn: { backgroundColor: "#5FB8A1", paddingVertical: 10, borderRadius: 10, alignItems: "center" },
   imageBtnText: { color: "#fff", fontWeight: "600", fontSize: 14 },
+  editRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 8 },
+  editBtn: { flex: 1, backgroundColor: "#1E6F60", paddingVertical: 10, borderRadius: 10, alignItems: "center", marginHorizontal: 4 },
+  editBtnText: { color: "#fff", fontWeight: "600", fontSize: 14 },
   categoryContainer: { flexDirection: "row", flexWrap: "wrap", marginBottom: 8 },
   categoryBtn: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1, borderColor: "#ccc", marginRight: 8, marginBottom: 8, backgroundColor: "#fff" },
   categoryBtnActive: { borderColor: "#1E6F60", backgroundColor: "#E8F5E9" },

@@ -10,8 +10,8 @@ export default function HelpScreen({ navigation }) {
         <View style={styles.card}>
           <Text style={styles.title}>Help & Support</Text>
 
-          <Text style={styles.text}>📧 Email: support@example.com</Text>
-          <Text style={styles.text}>📞 Phone: +1 (555) 555-5555</Text>
+          <Text style={styles.text}>📧 Email: falconshop.info5139@gmail.com</Text>
+          <Text style={styles.text}>💬 Contact us through the app</Text>
         </View>
       </View>
     </View>

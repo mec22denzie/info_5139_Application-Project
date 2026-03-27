@@ -74,9 +74,17 @@ export default function SignUpScreen({ navigation }) {
         { text: "OK", onPress: () => navigation.replace("Login") },
       ]);
     } catch (error) {
-      // Handle registration errors
+      // Handle registration errors with user-friendly messages
       logError(error, { screen: "SignUpScreen" });
-      showAlert("Registration Error", error.message);
+      if (error.code === "auth/email-already-in-use") {
+        showAlert("Registration Error", "An account with this email already exists. Please log in instead.");
+      } else if (error.code === "auth/weak-password") {
+        showAlert("Registration Error", "Password is too weak. Please use at least 8 characters with letters and numbers.");
+      } else if (error.code === "auth/invalid-email") {
+        showAlert("Registration Error", "The email address is not valid. Please check and try again.");
+      } else {
+        showAlert("Registration Error", error.message);
+      }
     } finally {
       setLoading(false);
     }

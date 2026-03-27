@@ -10,7 +10,7 @@ export default function AboutScreen({ navigation }) {
           <Text style={styles.title}>About This App</Text>
           <Text style={styles.text}>
             This is a sample e-commerce project built with React Native, Firebase,
-            and Expo for INFO-3173.
+            and Expo for INFO-5139.
           </Text>
         </View>
       </View>

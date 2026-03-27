@@ -1,6 +1,10 @@
 // Error Boundary Component
 // Catches JavaScript errors in the React component tree and logs them
 // to Firestore via the error logger. Shows a fallback UI instead of crashing.
+//
+// NOTE: React Navigation sets aria-hidden on inactive screens which can block
+// focus for screen readers. This is a known library issue (not in our code).
+// Monitor for future fix: https://github.com/react-navigation/react-navigation/issues
 
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
