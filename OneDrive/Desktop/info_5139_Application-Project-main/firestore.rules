@@ -1,0 +1,82 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: get the role of the authenticated user
+    function userRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isAdmin() {
+      return request.auth != null && userRole() == "Admin";
+    }
+
+    function isDonorOrAdmin() {
+      return request.auth != null && (userRole() == "Donor" || userRole() == "Admin");
+    }
+
+    // Users - users can read/write their own doc, admins can read all
+    match /users/{userId} {
+      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      allow write: if request.auth != null && (
+        request.auth.uid == userId || isAdmin()
+      );
+    }
+
+    // User sub-collections (addresses etc)
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Products - authenticated users can read; donors/admins can create;
+    // donors can only update/delete their own listings; admins can update/delete any
+    match /products/{productId} {
+      allow read: if request.auth != null;
+      allow create: if isDonorOrAdmin();
+      allow update: if request.auth != null && (
+        isAdmin() ||
+        (userRole() == "Donor" && resource.data.donorId == request.auth.uid)
+      );
+      allow delete: if request.auth != null && (
+        isAdmin() ||
+        (userRole() == "Donor" && resource.data.donorId == request.auth.uid)
+      );
+    }
+
+    // Orders - only readable/writable by the owning user
+    match /orders/{orderId} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+    }
+
+    // Carts - only readable/writable by the owning user
+    match /carts/{cartId} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+    }
+
+    // Notifications - only readable by the user they belong to
+    match /notifications/{notifId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    // System Logs - admins can read, any authenticated user can create
+    match /systemLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if request.auth != null;
+    }
+
+    // Reports - any authenticated user can create, only admins can read/update/delete
+    match /reports/{reportId} {
+      allow create: if request.auth != null;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Admin actions - only admins can read/write
+    match /adminActions/{actionId} {
+      allow read, write: if isAdmin();
+    }
+  }
+}
