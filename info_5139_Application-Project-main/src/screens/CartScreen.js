@@ -139,7 +139,6 @@ export default function CartScreen({ navigation }) {
           contentContainerStyle={{ paddingBottom: 100 }}
           renderItem={({ item, index }) => (
             <View style={styles.item}>
-              //Added for donor _m
               {typeof item.image === "string" && item.image.startsWith("https://") ? (
                 <Image source={{ uri: item.image }} style={styles.image} />
               ) : item.image ? (
