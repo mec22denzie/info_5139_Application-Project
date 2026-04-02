@@ -30,6 +30,11 @@ const TYPE_ICONS = {
   account_enabled: "checkmark-circle",
   role_changed: "swap-horizontal",
   cart_added: "cart",
+  item_request: "document-text",
+  request_submitted: "paper-plane",
+  request_approved: "checkmark-circle",
+  request_rejected: "close-circle",
+  request_updated: "refresh-circle",
 };
 
 export default function NotificationsScreen() {
@@ -43,10 +48,13 @@ export default function NotificationsScreen() {
       return;
     }
 
-    const unsubscribe = subscribeToNotifications(auth.currentUser.uid, (data) => {
-      setNotifications(data);
-      setLoading(false);
-    });
+    const unsubscribe = subscribeToNotifications(
+      auth.currentUser.uid,
+      (data) => {
+        setNotifications(data);
+        setLoading(false);
+      },
+    );
 
     return () => {
       if (unsubscribe) unsubscribe();
@@ -59,7 +67,10 @@ export default function NotificationsScreen() {
       try {
         await markAsRead(item.id);
       } catch (error) {
-        logError(error, { screen: "NotificationsScreen", metadata: { action: "markAsRead" } });
+        logError(error, {
+          screen: "NotificationsScreen",
+          metadata: { action: "markAsRead" },
+        });
       }
     }
   };
@@ -70,13 +81,17 @@ export default function NotificationsScreen() {
     try {
       await markAllAsRead(auth.currentUser.uid);
     } catch (error) {
-      logError(error, { screen: "NotificationsScreen", metadata: { action: "markAllAsRead" } });
+      logError(error, {
+        screen: "NotificationsScreen",
+        metadata: { action: "markAllAsRead" },
+      });
     }
   };
 
   // Format timestamp for display
   const formatDate = (timestamp) => {
     if (!timestamp) return "";
+
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     const now = new Date();
     const diffMs = now - date;
@@ -94,6 +109,7 @@ export default function NotificationsScreen() {
   // Render a single notification item
   const renderItem = ({ item }) => {
     const iconName = TYPE_ICONS[item.type] || "notifications";
+
     return (
       <TouchableOpacity
         style={[styles.notifCard, !item.read && styles.unread]}
@@ -101,13 +117,23 @@ export default function NotificationsScreen() {
         activeOpacity={0.7}
       >
         <View style={styles.iconContainer}>
-          <Ionicons name={iconName} size={24} color={item.read ? "#999" : "#1E6F60"} />
+          <Ionicons
+            name={iconName}
+            size={24}
+            color={item.read ? "#999" : "#1E6F60"}
+          />
         </View>
+
         <View style={styles.content}>
-          <Text style={[styles.notifTitle, !item.read && styles.unreadText]}>{item.title}</Text>
-          <Text style={styles.notifMessage} numberOfLines={2}>{item.message}</Text>
+          <Text style={[styles.notifTitle, !item.read && styles.unreadText]}>
+            {item.title}
+          </Text>
+          <Text style={styles.notifMessage} numberOfLines={2}>
+            {item.message}
+          </Text>
           <Text style={styles.notifTime}>{formatDate(item.createdAt)}</Text>
         </View>
+
         {!item.read && <View style={styles.unreadDot} />}
       </TouchableOpacity>
     );
@@ -151,8 +177,17 @@ export default function NotificationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f4f4f6", padding: 16 },
-  center: { flex: 1, justifyContent: "center", alignItems: "center", paddingTop: 40 },
+  container: {
+    flex: 1,
+    backgroundColor: "#f4f4f6",
+    padding: 16,
+  },
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 40,
+  },
   markAllBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -161,7 +196,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     marginBottom: 10,
   },
-  markAllText: { color: "#1E6F60", fontWeight: "600", fontSize: 14, marginLeft: 4 },
+  markAllText: {
+    color: "#1E6F60",
+    fontWeight: "600",
+    fontSize: 14,
+    marginLeft: 4,
+  },
   notifCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -180,12 +220,31 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: "#1E6F60",
   },
-  iconContainer: { marginRight: 12 },
-  content: { flex: 1 },
-  notifTitle: { fontSize: 15, fontWeight: "500", color: "#333" },
-  unreadText: { fontWeight: "700", color: "#222" },
-  notifMessage: { fontSize: 13, color: "#666", marginTop: 2 },
-  notifTime: { fontSize: 11, color: "#aaa", marginTop: 4 },
+  iconContainer: {
+    marginRight: 12,
+  },
+  content: {
+    flex: 1,
+  },
+  notifTitle: {
+    fontSize: 15,
+    fontWeight: "500",
+    color: "#333",
+  },
+  unreadText: {
+    fontWeight: "700",
+    color: "#222",
+  },
+  notifMessage: {
+    fontSize: 13,
+    color: "#666",
+    marginTop: 2,
+  },
+  notifTime: {
+    fontSize: 11,
+    color: "#aaa",
+    marginTop: 4,
+  },
   unreadDot: {
     width: 10,
     height: 10,
@@ -193,5 +252,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#1E6F60",
     marginLeft: 8,
   },
-  emptyText: { fontSize: 16, color: "#999", marginTop: 12 },
+  emptyText: {
+    fontSize: 16,
+    color: "#999",
+    marginTop: 12,
+  },
 });

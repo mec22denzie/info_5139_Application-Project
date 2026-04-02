@@ -2,14 +2,88 @@ import React, { useState } from "react";
 import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { auth, firestore } from "../services/FirebaseConfig";
-import { collection, addDoc, updateDoc, arrayUnion, query, where, getDocs, serverTimestamp } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  updateDoc,
+  arrayUnion,
+  query,
+  where,
+  getDocs,
+  serverTimestamp,
+  doc,
+  setDoc,
+} from "firebase/firestore";
 import { logError } from "../services/errorLogger";
 import { showAlert } from "../utils/alert";
+import { useWishlist } from "../context/WishlistContext";
 
 // Product Detail Screen Component
 export default function ProductDetailScreen({ route, navigation }) {
   const { product } = route.params;
   const [quantity, setQuantity] = useState(1);
+
+  const { toggleFavorite, isFavorite } = useWishlist();
+
+  // Create/open chat with seller
+  const handleMessageSeller = async () => {
+    try {
+      if (!auth.currentUser) {
+        showAlert("Error", "Please login to message the seller.");
+        return;
+      }
+
+      const studentId = auth.currentUser.uid;
+      const sellerId =
+        product?.donorId ||
+        product?.userId ||
+        product?.ownerId ||
+        product?.createdBy;
+
+      if (!sellerId) {
+        showAlert("Error", "Seller information is missing.");
+        return;
+      }
+
+      if (sellerId === studentId) {
+        showAlert("Notice", "You cannot message yourself.");
+        return;
+      }
+
+      // Create a stable chatId based on product + 2 users
+      const sortedIds = [studentId, sellerId].sort();
+      const chatId = `${product?.id}_${sortedIds[0]}_${sortedIds[1]}`;
+
+      // Create chat document if it doesn't exist
+      await setDoc(
+        doc(firestore, "chats", chatId),
+        {
+          chatId,
+          productId: product?.id || "",
+          productName: product?.name || "",
+          sellerId,
+          studentId,
+          participants: [studentId, sellerId],
+          createdAt: serverTimestamp(),
+          lastMessage: "",
+          lastMessageAt: serverTimestamp(),
+        },
+        { merge: true },
+      );
+
+      navigation.navigate("ChatScreen", {
+        chatId,
+        productName: product?.name || "Product",
+      });
+    } catch (error) {
+      console.log("[ERROR][ProductDetailScreen][handleMessageSeller]", error);
+      logError(error, {
+        screen: "ProductDetailScreen",
+        metadata: { action: "handleMessageSeller", productId: product?.id },
+      });
+      showAlert("Error", "Failed to open chat.");
+    }
+  };
 
   // Function to add the current product to the user's cart in Firestore
   const addToCart = async () => {
@@ -42,7 +116,7 @@ export default function ProductDetailScreen({ route, navigation }) {
         collection(firestore, "orders"),
         where("buyerId", "==", userId),
         where("productId", "==", product?.id),
-        where("status", "in", ["pending", "accepted"])
+        where("status", "in", ["pending", "accepted"]),
       );
 
       const existingRequestSnap = await getDocs(existingRequestQuery);
@@ -53,7 +127,10 @@ export default function ProductDetailScreen({ route, navigation }) {
       }
 
       // Query the "carts" collection for the current user's cart
-      const q = query(collection(firestore, "carts"), where("userId", "==", userId));
+      const q = query(
+        collection(firestore, "carts"),
+        where("userId", "==", userId),
+      );
       const snapshot = await getDocs(q);
 
       const cartItem = {
@@ -66,18 +143,11 @@ export default function ProductDetailScreen({ route, navigation }) {
         addedAt: new Date().toISOString(),
       };
 
-      console.log("product:", product);
-      console.log("user:", auth.currentUser);
-      console.log("cartItem:", cartItem);
-
-      Object.entries(cartItem).forEach(([key, value]) => {
-        console.log(key, value, value === undefined ? "❌ UNDEFINED" : "✅ OK");
-      });
-
-      const hasUndefined = Object.values(cartItem).some((value) => value === undefined);
+      const hasUndefined = Object.values(cartItem).some(
+        (value) => value === undefined,
+      );
 
       if (hasUndefined) {
-        console.log("❌ ERROR: cartItem has undefined values", cartItem);
         showAlert("Error", "Some product data is missing.");
         return;
       }
@@ -137,18 +207,32 @@ export default function ProductDetailScreen({ route, navigation }) {
         screen: "ProductDetailScreen",
         metadata: { action: "addToCart", productId: product?.id },
       });
-      showAlert("Error", error.message || "Failed to add item to cart. Please try again.");
+      showAlert(
+        "Error",
+        error.message || "Failed to add item to cart. Please try again.",
+      );
     }
   };
 
   return (
     <View style={styles.container}>
-      <Image
-        source={product?.imageSource}
-        style={styles.image}
-      />
+      <Image source={product?.imageSource} style={styles.image} />
+
+      <TouchableOpacity
+        style={styles.favoriteButton}
+        onPress={() => toggleFavorite(product)}
+      >
+        <Ionicons
+          name={isFavorite(product?.id) ? "heart" : "heart-outline"}
+          size={28}
+          color={isFavorite(product?.id) ? "#FF3B30" : "#666"}
+        />
+      </TouchableOpacity>
+
       <Text style={styles.name}>{product?.name}</Text>
-      <Text style={styles.price}>${Number(product?.price ?? 0).toFixed(2)}</Text>
+      <Text style={styles.price}>
+        ${Number(product?.price ?? 0).toFixed(2)}
+      </Text>
       <Text style={styles.description}>{product?.description}</Text>
       <Text style={styles.category}>Category: {product?.category}</Text>
 
@@ -170,6 +254,14 @@ export default function ProductDetailScreen({ route, navigation }) {
           <Text style={styles.quantityButtonText}>+</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Message Seller Button */}
+      <TouchableOpacity
+        style={styles.messageButton}
+        onPress={handleMessageSeller}
+      >
+        <Text style={styles.messageButtonText}>Message Seller</Text>
+      </TouchableOpacity>
 
       {/* Add to Cart Button */}
       <TouchableOpacity style={styles.addToCartButton} onPress={addToCart}>
@@ -206,7 +298,13 @@ const styles = StyleSheet.create({
     height: 320,
     borderRadius: 12,
     marginBottom: 20,
-    resizeMode: 'contain', // or 'cover'
+    resizeMode: "contain",
+  },
+  favoriteButton: {
+    marginBottom: 12,
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: "#F8F8F8",
   },
   name: {
     fontSize: 26,
@@ -256,11 +354,27 @@ const styles = StyleSheet.create({
     marginHorizontal: 15,
     color: "#333333",
   },
+  messageButton: {
+    backgroundColor: "#00A34A",
+    paddingVertical: 15,
+    paddingHorizontal: 60,
+    borderRadius: 10,
+    width: "100%",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  messageButtonText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "600",
+  },
   addToCartButton: {
     backgroundColor: "#1E6F60",
     paddingVertical: 15,
     paddingHorizontal: 60,
     borderRadius: 10,
+    width: "100%",
+    alignItems: "center",
   },
   addToCartText: {
     color: "#FFFFFF",

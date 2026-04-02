@@ -42,7 +42,10 @@ export default function CartScreen({ navigation }) {
       try {
         setLoading(true);
         const uid = auth.currentUser.uid;
-        const q = query(collection(firestore, "carts"), where("userId", "==", uid));
+        const q = query(
+          collection(firestore, "carts"),
+          where("userId", "==", uid),
+        );
         const snapshot = await getDocs(q);
         if (snapshot.empty) {
           setItems([]);
@@ -54,7 +57,10 @@ export default function CartScreen({ navigation }) {
           setItems(Array.isArray(data.items) ? data.items : []);
         }
       } catch (err) {
-        logError(err, { screen: "CartScreen", metadata: { action: "fetchCart" } });
+        logError(err, {
+          screen: "CartScreen",
+          metadata: { action: "fetchCart" },
+        });
         showAlert("Error", "Failed to load cart.");
       } finally {
         setLoading(false);
@@ -70,22 +76,37 @@ export default function CartScreen({ navigation }) {
       if (!cartDocId) {
         const uid = auth.currentUser.uid;
         const docRef = doc(collection(firestore, "carts"));
-        await setDoc(docRef, { userId: uid, items: newItems, updatedAt: new Date().toISOString() });
+        await setDoc(docRef, {
+          userId: uid,
+          items: newItems,
+          updatedAt: new Date().toISOString(),
+        });
         setCartDocId(docRef.id);
       } else {
         const docRef = doc(firestore, "carts", cartDocId);
-        await setDoc(docRef, { items: newItems, updatedAt: new Date().toISOString() }, { merge: true });
+        await setDoc(
+          docRef,
+          { items: newItems, updatedAt: new Date().toISOString() },
+          { merge: true },
+        );
       }
       setItems(newItems);
     } catch (err) {
-      logError(err, { screen: "CartScreen", metadata: { action: "updateCart" } });
+      logError(err, {
+        screen: "CartScreen",
+        metadata: { action: "updateCart" },
+      });
       showAlert("Error", "Failed to update cart.");
     }
   };
 
   // Change quantity of an item
   const changeQuantity = (index, delta) => {
-    const newItems = items.map((it, i) => (i === index ? { ...it, quantity: Math.max(1, (it.quantity || 1) + delta) } : it));
+    const newItems = items.map((it, i) =>
+      i === index
+        ? { ...it, quantity: Math.max(1, (it.quantity || 1) + delta) }
+        : it,
+    );
     updateCart(newItems);
   };
 
@@ -107,13 +128,19 @@ export default function CartScreen({ navigation }) {
       setItems([]);
       showAlert("Cart cleared");
     } catch (err) {
-      logError(err, { screen: "CartScreen", metadata: { action: "clearCart" } });
+      logError(err, {
+        screen: "CartScreen",
+        metadata: { action: "clearCart" },
+      });
       showAlert("Error", "Failed to clear cart.");
     }
   };
 
   // Calculate subtotal of cart items
-  const subtotal = items.reduce((sum, it) => sum + (Number(it.price || 0) * Number(it.quantity || 1)), 0);
+  const subtotal = items.reduce(
+    (sum, it) => sum + Number(it.price || 0) * Number(it.quantity || 1),
+    0,
+  );
 
   if (loading) {
     return (
@@ -133,13 +160,14 @@ export default function CartScreen({ navigation }) {
         </View>
       ) : (
         <FlatList
-        // Render cart items
+          // Render cart items
           data={items}
           keyExtractor={(_, index) => String(index)}
           contentContainerStyle={{ paddingBottom: 100 }}
           renderItem={({ item, index }) => (
             <View style={styles.item}>
-              {typeof item.image === "string" && item.image.startsWith("https://") ? (
+              {typeof item.image === "string" &&
+              item.image.startsWith("https://") ? (
                 <Image source={{ uri: item.image }} style={styles.image} />
               ) : item.image ? (
                 <Image source={item.image} style={styles.image} />
@@ -159,16 +187,27 @@ export default function CartScreen({ navigation }) {
               )}
               <View style={styles.info}>
                 <Text style={styles.name}>{item.name}</Text>
-                <Text style={styles.price}>${item.price} x {item.quantity}</Text>
+                <Text style={styles.price}>
+                  ${item.price} x {item.quantity}
+                </Text>
                 <View style={styles.controls}>
-                  <TouchableOpacity style={styles.controlBtn} onPress={() => changeQuantity(index, -1)}>
+                  <TouchableOpacity
+                    style={styles.controlBtn}
+                    onPress={() => changeQuantity(index, -1)}
+                  >
                     <Text style={styles.controlText}>-</Text>
                   </TouchableOpacity>
                   <Text style={styles.qty}>{item.quantity}</Text>
-                  <TouchableOpacity style={styles.controlBtn} onPress={() => changeQuantity(index, 1)}>
+                  <TouchableOpacity
+                    style={styles.controlBtn}
+                    onPress={() => changeQuantity(index, 1)}
+                  >
                     <Text style={styles.controlText}>+</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.removeBtn} onPress={() => removeItem(index)}>
+                  <TouchableOpacity
+                    style={styles.removeBtn}
+                    onPress={() => removeItem(index)}
+                  >
                     <Text style={styles.removeText}>Remove</Text>
                   </TouchableOpacity>
                 </View>
@@ -182,16 +221,22 @@ export default function CartScreen({ navigation }) {
       <View style={styles.footer}>
         <Text style={styles.total}>Subtotal: ${subtotal.toFixed(2)}</Text>
         <View style={styles.footerButtons}>
-          <TouchableOpacity style={styles.clearBtn} onPress={() => {
-            showAlert("Clear cart", "Are you sure?", [
-              { text: "Cancel", style: "cancel" },
-              { text: "Clear", style: "destructive", onPress: clearCart }
-            ]);
-          }}>
+          <TouchableOpacity
+            style={styles.clearBtn}
+            onPress={() => {
+              showAlert("Clear cart", "Are you sure?", [
+                { text: "Cancel", style: "cancel" },
+                { text: "Clear", style: "destructive", onPress: clearCart },
+              ]);
+            }}
+          >
             <Text style={styles.clearText}>Clear</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.checkoutBtn} onPress={() => navigation.navigate('Checkout')}>
+          <TouchableOpacity
+            style={styles.checkoutBtn}
+            onPress={() => navigation.navigate("Checkout")}
+          >
             <Text style={styles.checkoutText}>Checkout</Text>
           </TouchableOpacity>
         </View>
@@ -203,7 +248,13 @@ export default function CartScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff", padding: 12 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  title: { fontSize: 22, fontWeight: "bold", marginBottom: 20, textAlign: "left", color: "#222" },
+  title: {
+    fontSize: 22,
+    fontWeight: "bold",
+    marginBottom: 20,
+    textAlign: "left",
+    color: "#222",
+  },
   empty: { fontSize: 16, color: "#666" },
   item: {
     flexDirection: "row",
@@ -222,16 +273,49 @@ const styles = StyleSheet.create({
   name: { fontSize: 16, fontWeight: "600", color: "#222" },
   price: { fontSize: 14, color: "#00A34A", marginVertical: 6 },
   controls: { flexDirection: "row", alignItems: "center", marginTop: 6 },
-  controlBtn: { backgroundColor: "#00A34A", paddingVertical: 4, paddingHorizontal: 12, borderRadius: 6 },
+  controlBtn: {
+    backgroundColor: "#00A34A",
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+  },
   controlText: { color: "#fff", fontSize: 16, textAlign: "center" },
   qty: { marginHorizontal: 10, fontWeight: "bold", fontSize: 16 },
   removeBtn: { marginLeft: 12 },
   removeText: { color: "#d00", fontWeight: "600" },
-  footer: { paddingVertical: 16, borderTopWidth: 1, borderColor: "#eee", backgroundColor: "#fff" },
-  total: { fontSize: 18, fontWeight: "bold", textAlign: "center", marginBottom: 12 },
-  footerButtons: { flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 12 },
-  clearBtn: { flex: 1, marginRight: 8, padding: 14, borderRadius: 10, backgroundColor: "#5FB8A1", alignItems: "center" },
+  footer: {
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderColor: "#eee",
+    backgroundColor: "#fff",
+  },
+  total: {
+    fontSize: 18,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  footerButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
+  },
+  clearBtn: {
+    flex: 1,
+    marginRight: 8,
+    padding: 14,
+    borderRadius: 10,
+    backgroundColor: "#5FB8A1",
+    alignItems: "center",
+  },
   clearText: { color: "#FFFFFF", fontWeight: "600", fontSize: 16 },
-  checkoutBtn: { flex: 1, marginLeft: 8, padding: 14, borderRadius: 10, backgroundColor: "#1E6F60", alignItems: "center" },
+  checkoutBtn: {
+    flex: 1,
+    marginLeft: 8,
+    padding: 14,
+    borderRadius: 10,
+    backgroundColor: "#1E6F60",
+    alignItems: "center",
+  },
   checkoutText: { color: "#fff", fontWeight: "600", fontSize: 16 },
 });

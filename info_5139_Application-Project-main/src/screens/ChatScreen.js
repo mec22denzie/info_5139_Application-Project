@@ -1,5 +1,12 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
 import { auth, firestore } from "../services/FirebaseConfig";
 import {
   collection,
@@ -8,48 +15,94 @@ import {
   orderBy,
   onSnapshot,
   doc,
-  updateDoc
+  updateDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 import { showAlert } from "../utils/alert";
 
 export default function ChatScreen({ route }) {
-  const { chatId, productName } = route.params;
+  const { chatId, productName } = route?.params || {};
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
+  const flatListRef = useRef(null);
 
   useEffect(() => {
+    if (!chatId) return;
+
     const q = query(
       collection(firestore, "chats", chatId, "messages"),
-      orderBy("createdAt", "asc")
+      orderBy("createdAt", "asc"),
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const list = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
+      const list = snapshot.docs.map((docItem) => ({
+        id: docItem.id,
+        ...docItem.data(),
       }));
-      setMessages(list);
+
+      const sortedList = list.sort((a, b) => {
+        const getTime = (value) => {
+          if (!value) return 0;
+
+          // Firestore Timestamp
+          if (typeof value?.toMillis === "function") {
+            return value.toMillis();
+          }
+
+          // ISO string
+          if (typeof value === "string") {
+            const parsed = new Date(value).getTime();
+            return Number.isNaN(parsed) ? 0 : parsed;
+          }
+
+          return 0;
+        };
+
+        return getTime(a.createdAt) - getTime(b.createdAt);
+      });
+
+      setMessages(sortedList);
     });
 
     return unsubscribe;
   }, [chatId]);
 
+  useEffect(() => {
+    if (!messages.length) return;
+
+    const timer = setTimeout(() => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [messages]);
+
   const sendMessage = async () => {
     try {
+      if (!chatId) {
+        showAlert("Error", "Chat information is missing.");
+        return;
+      }
+
       if (!text.trim()) return;
 
-      const senderId = auth.currentUser.uid;
+      const senderId = auth.currentUser?.uid;
       const cleanText = text.trim();
+
+      if (!senderId) {
+        showAlert("Error", "Please log in again.");
+        return;
+      }
 
       await addDoc(collection(firestore, "chats", chatId, "messages"), {
         senderId,
         text: cleanText,
-        createdAt: new Date().toISOString(),
+        createdAt: serverTimestamp(),
       });
 
       await updateDoc(doc(firestore, "chats", chatId), {
         lastMessage: cleanText,
-        lastMessageAt: new Date().toISOString(),
+        lastMessageAt: serverTimestamp(),
       });
 
       setText("");
@@ -60,24 +113,52 @@ export default function ChatScreen({ route }) {
   };
 
   const renderItem = ({ item }) => {
-    const isMine = item.senderId === auth.currentUser.uid;
+    const isMine = item.senderId === auth.currentUser?.uid;
 
     return (
-      <View style={[styles.messageBubble, isMine ? styles.myMessage : styles.otherMessage]}>
+      <View
+        style={[
+          styles.messageBubble,
+          isMine ? styles.myMessage : styles.otherMessage,
+        ]}
+      >
         <Text style={styles.messageText}>{item.text}</Text>
       </View>
     );
   };
 
+  if (!chatId) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.errorTitle}>Chat information is missing.</Text>
+        <Text style={styles.errorText}>
+          Please open the chat from the product page.
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Chat about: {productName}</Text>
+      <Text style={styles.header}>Chat about: {productName || "Product"}</Text>
 
       <FlatList
+        ref={flatListRef}
         data={messages}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         contentContainerStyle={styles.list}
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyText}>
+              No messages yet. Start the conversation.
+            </Text>
+          </View>
+        }
+        onContentSizeChange={() =>
+          flatListRef.current?.scrollToEnd({ animated: true })
+        }
+        onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
       />
 
       <View style={styles.inputContainer}>
@@ -98,16 +179,47 @@ export default function ChatScreen({ route }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  centered: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+    backgroundColor: "#fff",
+  },
+  errorTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 8,
+    color: "#1E6F60",
+  },
+  errorText: {
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+  },
   header: {
     fontSize: 18,
     fontWeight: "bold",
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#ddd",
+    color: "#1E6F60",
   },
   list: {
     padding: 12,
+    flexGrow: 1,
+  },
+  emptyState: {
+    alignItems: "center",
+    marginTop: 40,
+  },
+  emptyText: {
+    color: "#999",
+    fontSize: 15,
   },
   messageBubble: {
     padding: 10,
@@ -132,6 +244,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#ddd",
     alignItems: "flex-end",
+    backgroundColor: "#fff",
   },
   input: {
     flex: 1,
@@ -148,6 +261,7 @@ const styles = StyleSheet.create({
   sendBtn: {
     backgroundColor: "#007AFF",
     paddingHorizontal: 16,
+    paddingVertical: 14,
     justifyContent: "center",
     borderRadius: 8,
   },

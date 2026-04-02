@@ -1,6 +1,14 @@
 //React and React Native imports
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, FlatList, Image, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
+import {
+  View,
+  Text,
+  FlatList,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+} from "react-native";
 // Import Firestore functions for CRUD operations
 import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
 import { firestore } from "../services/FirebaseConfig";
@@ -30,20 +38,32 @@ export default function ProductListScreen({ navigation }) {
     return null;
   };
 
+  // Helper to get seller ID from different possible field names
+  const getSellerId = (item) => {
+    return (
+      item?.sellerId ||
+      item?.donorId ||
+      item?.userId ||
+      item?.ownerId ||
+      item?.createdBy ||
+      null
+    );
+  };
+
   //Local image mapping for product images
   const localImages = {
-  "B_Jacket": require("../../assets/Apparel/B_Jacket.jpg"),
-  "R_Hoodie": require("../../assets/Apparel/R_Hoodie.jpg"),
-  "Dress1": require("../../assets/Apparel/Dress1.jpg"),
-  "MacPro": require("../../assets/Electronics/MacPro.jpg"),
-  "EarPods": require("../../assets/Electronics/EarPods.jpg"),
-  "Camera": require("../../assets/Electronics/Camera.jpg"),
-  "Headphone": require("../../assets/Electronics/HeadPhone.jpg"),
-  "Air_Shoes": require("../../assets/Shoes/Air_Shoes.jpg"),
-  "WP_Boots": require("../../assets/Shoes/WP_Boots.jpg"),
-  "Rubber_Shoes": require("../../assets/Shoes/Rubber_Shoes.jpg"),
-  "Colored_Shoes": require("../../assets/Shoes/Colored_Shoes.jpg"),
-};
+    B_Jacket: require("../../assets/Apparel/B_Jacket.jpg"),
+    R_Hoodie: require("../../assets/Apparel/R_Hoodie.jpg"),
+    Dress1: require("../../assets/Apparel/Dress1.jpg"),
+    MacPro: require("../../assets/Electronics/MacPro.jpg"),
+    EarPods: require("../../assets/Electronics/EarPods.jpg"),
+    Camera: require("../../assets/Electronics/Camera.jpg"),
+    Headphone: require("../../assets/Electronics/HeadPhone.jpg"),
+    Air_Shoes: require("../../assets/Shoes/Air_Shoes.jpg"),
+    WP_Boots: require("../../assets/Shoes/WP_Boots.jpg"),
+    Rubber_Shoes: require("../../assets/Shoes/Rubber_Shoes.jpg"),
+    Colored_Shoes: require("../../assets/Shoes/Colored_Shoes.jpg"),
+  };
 
   // Seed sample products if the collection is empty
   useEffect(() => {
@@ -64,14 +84,18 @@ export default function ProductListScreen({ navigation }) {
         const productsRef = collection(firestore, "products");
         const snapshot = await getDocs(productsRef);
 
-        const data = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
+        const data = snapshot.docs.map((docItem) => ({
+          id: docItem.id,
+          ...docItem.data(),
         }));
+
         setProducts(data);
         setError(null);
       } catch (err) {
-        logError(err, { screen: "ProductListScreen", metadata: { action: "fetchProducts" } });
+        logError(err, {
+          screen: "ProductListScreen",
+          metadata: { action: "fetchProducts" },
+        });
         setError("Failed to load products: " + err.message);
       } finally {
         setLoading(false);
@@ -110,27 +134,38 @@ export default function ProductListScreen({ navigation }) {
       }
 
       // Condition filter
-      const matchesCondition = selectedCondition === "All" || p.condition === selectedCondition;
+      const matchesCondition =
+        selectedCondition === "All" || p.condition === selectedCondition;
 
-      return matchesCategory && matchesSearch && matchesPrice && matchesCondition;
+      return (
+        matchesCategory && matchesSearch && matchesPrice && matchesCondition
+      );
     } catch (err) {
-      logError(err, { screen: "ProductListScreen", metadata: { action: "filterProduct" } });
+      logError(err, {
+        screen: "ProductListScreen",
+        metadata: { action: "filterProduct" },
+      });
       return false;
     }
   });
 
   // Delete product from firestore by ID (hidden)
-const deleteProduct = async (productId) => {
-  try {
-    await deleteDoc(doc(firestore, "products", productId));
-    // Remove from local state to update UI immediately
-    setProducts((prevProducts) => prevProducts.filter(p => p.id !== productId));
-    alert("Product deleted successfully!");
-  } catch (err) {
-    logError(err, { screen: "ProductListScreen", metadata: { action: "deleteProduct", productId } });
-    alert("Failed to delete product. Try again.");
-  }
-};
+  const deleteProduct = async (productId) => {
+    try {
+      await deleteDoc(doc(firestore, "products", productId));
+      // Remove from local state to update UI immediately
+      setProducts((prevProducts) =>
+        prevProducts.filter((p) => p.id !== productId),
+      );
+      alert("Product deleted successfully!");
+    } catch (err) {
+      logError(err, {
+        screen: "ProductListScreen",
+        metadata: { action: "deleteProduct", productId },
+      });
+      alert("Failed to delete product. Try again.");
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -138,47 +173,71 @@ const deleteProduct = async (productId) => {
 
       {/* Category Filter */}
       <View style={styles.categories}>
-  {[
-    { name: "All", image: "https://cdn-icons-png.flaticon.com/512/709/709496.png" },
-    { name: "Electronics", image: "https://cdn-icons-png.flaticon.com/512/1041/1041916.png" },
-    { name: "Footwear", image: "https://cdn-icons-png.flaticon.com/512/507/507985.png" },
-    { name: "Apparel", image: "https://cdn-icons-png.flaticon.com/512/892/892458.png" },
-  ].map((cat) => (
-    <TouchableOpacity
-      key={cat.name}
-      onPress={() => setCategory(cat.name)}
-      style={styles.categoryItem}
-    >
-      <Image source={{ uri: cat.image }} style={styles.categoryImage} />
-      <Text
-        style={[
-          styles.category,
-          category === cat.name && styles.activeCategory,
-        ]}
-      >
-        {cat.name}
-      </Text>
-    </TouchableOpacity>
-  ))}
-</View>
+        {[
+          {
+            name: "All",
+            image: "https://cdn-icons-png.flaticon.com/512/709/709496.png",
+          },
+          {
+            name: "Electronics",
+            image: "https://cdn-icons-png.flaticon.com/512/1041/1041916.png",
+          },
+          {
+            name: "Footwear",
+            image: "https://cdn-icons-png.flaticon.com/512/507/507985.png",
+          },
+          {
+            name: "Apparel",
+            image: "https://cdn-icons-png.flaticon.com/512/892/892458.png",
+          },
+        ].map((cat) => (
+          <TouchableOpacity
+            key={cat.name}
+            onPress={() => setCategory(cat.name)}
+            style={styles.categoryItem}
+          >
+            <Image source={{ uri: cat.image }} style={styles.categoryImage} />
+            <Text
+              style={[
+                styles.category,
+                category === cat.name && styles.activeCategory,
+              ]}
+            >
+              {cat.name}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
       {/* Search Bar */}
-    <View style={styles}>
-      <SearchBar searchQuery={search} onChange={setSearch} />
-    </View>
+      <View style={styles.searchWrapper}>
+        <SearchBar searchQuery={search} onChange={setSearch} />
+      </View>
 
       {/* Price Range Filter */}
       <Text style={styles.filterLabel}>Price</Text>
       <View style={styles.filterRow}>
-        {["All", "Free", "Under $25", "Under $50", "Under $100", "$100+"].map((range) => (
-          <TouchableOpacity
-            key={range}
-            style={[styles.filterBtn, priceRange === range && styles.filterBtnActive]}
-            onPress={() => setPriceRange(range)}
-          >
-            <Text style={[styles.filterBtnText, priceRange === range && styles.filterBtnTextActive]}>{range}</Text>
-          </TouchableOpacity>
-        ))}
+        {["All", "Free", "Under $25", "Under $50", "Under $100", "$100+"].map(
+          (range) => (
+            <TouchableOpacity
+              key={range}
+              style={[
+                styles.filterBtn,
+                priceRange === range && styles.filterBtnActive,
+              ]}
+              onPress={() => setPriceRange(range)}
+            >
+              <Text
+                style={[
+                  styles.filterBtnText,
+                  priceRange === range && styles.filterBtnTextActive,
+                ]}
+              >
+                {range}
+              </Text>
+            </TouchableOpacity>
+          ),
+        )}
       </View>
 
       {/* Condition Filter */}
@@ -187,10 +246,20 @@ const deleteProduct = async (productId) => {
         {["All", "New", "Like New", "Good", "Fair"].map((cond) => (
           <TouchableOpacity
             key={cond}
-            style={[styles.filterBtn, selectedCondition === cond && styles.filterBtnActive]}
+            style={[
+              styles.filterBtn,
+              selectedCondition === cond && styles.filterBtnActive,
+            ]}
             onPress={() => setSelectedCondition(cond)}
           >
-            <Text style={[styles.filterBtnText, selectedCondition === cond && styles.filterBtnTextActive]}>{cond}</Text>
+            <Text
+              style={[
+                styles.filterBtnText,
+                selectedCondition === cond && styles.filterBtnTextActive,
+              ]}
+            >
+              {cond}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -222,15 +291,13 @@ const deleteProduct = async (productId) => {
                   navigation.navigate("ProductDetail", {
                     product: {
                       ...item,
+                      sellerId: getSellerId(item),
                       imageSource: getImageSource(item),
                     },
                   })
                 }
               >
-                <Image
-                  source={getImageSource(item)}
-                  style={styles.image}
-                />
+                <Image source={getImageSource(item)} style={styles.image} />
                 <Text style={styles.name}>{item.name}</Text>
                 {item.isDonation ? (
                   <Text style={styles.donationTag}>Free (Donation)</Text>
@@ -239,17 +306,16 @@ const deleteProduct = async (productId) => {
                 )}
               </TouchableOpacity>
 
-
-            {/* Delete Button */}
-            {/* <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={() => deleteProduct(item.id)}
-            >
-        <Text style={styles.deleteText}>🗑️</Text>
-      </TouchableOpacity> */}
-    </View>
-  )}
-/>
+              {/* Delete Button */}
+              {/* <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={() => deleteProduct(item.id)}
+              >
+                <Text style={styles.deleteText}>🗑️</Text>
+              </TouchableOpacity> */}
+            </View>
+          )}
+        />
       )}
     </View>
   );
@@ -259,7 +325,7 @@ const deleteProduct = async (productId) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,          // ensure space around content
+    padding: 16,
     backgroundColor: "#f9f9f9",
   },
   title: {
@@ -275,7 +341,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 8,
     alignItems: "center",
-    marginBottom: 12,      // space between button and categories
+    marginBottom: 12,
   },
   addSampleBtnText: {
     color: "#fff",
@@ -303,9 +369,12 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#00A34A",
   },
+  searchWrapper: {
+    marginBottom: 8,
+  },
   cardWrapper: {
     flex: 1,
-    margin: 10,           // spacing between cards
+    margin: 10,
   },
   card: {
     backgroundColor: "#F8F8F8",
@@ -348,13 +417,13 @@ const styles = StyleSheet.create({
     color: "#1E6F60",
   },
   searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: '#1E6F60',
+    borderColor: "#1E6F60",
     borderRadius: 8,
     paddingHorizontal: 10,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   searchInput: {
     flex: 1,
