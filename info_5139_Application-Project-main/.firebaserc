@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "info5139-project-falconshop"
-  }
+    "default": "info5139-falconshop"
+  },
+  "targets": {},
+  "etags": {}
 }
